@@ -446,6 +446,35 @@ describe('Tabs', () => {
     cy.ionPageVisible('tab1');
     cy.ionPageDoesNotExist('tab1childone');
   })
+
+  // Verifies fix for https://github.com/ionic-team/ionic-framework/issues/24936
+  it.only('should correctly return to root of Tab 1 after switching back from Tab 2', () => {
+    cy.visit('http://localhost:8080/tabs/tab1');
+
+    cy.get('#child-one').click();
+    cy.ionPageHidden('tab1');
+    cy.ionPageVisible('tab1childone');
+
+    cy.get('#child-two').click();
+    cy.ionPageHidden('tab1childone');
+    cy.ionPageVisible('tab1childtwo');
+
+    cy.get('ion-tab-button#tab-button-tab2').click();
+    cy.ionPageHidden('tab1childtwo');
+    cy.ionPageVisible('tab2');
+
+    cy.get('ion-tab-button#tab-button-tab1').click();
+    cy.ionPageHidden('tab2');
+    cy.ionPageVisible('tab1childtwo');
+
+    cy.ionBackClick('tab1childtwo');
+    cy.ionPageDoesNotExist('tab1childtwo');
+    cy.ionPageVisible('tab1childone');
+
+    cy.ionBackClick('tab1childone');
+    cy.ionPageDoesNotExist('tab1childone');
+    cy.ionPageVisible('tab1');
+  });
 })
 
 describe('Tabs - Swipe to Go Back', () => {
