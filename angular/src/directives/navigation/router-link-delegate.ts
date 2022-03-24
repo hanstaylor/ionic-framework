@@ -42,7 +42,14 @@ export class RouterLinkDelegateDirective implements OnInit, OnChanges {
    * @internal
    */
   @HostListener('click', ['$event'])
-  onClick(ev: UIEvent): void {
+  onClick(ev: MouseEvent): void {
+    if (ev.button === 0 && (ev.ctrlKey || ev.metaKey)) {
+      /**
+       * Ignore click events that include holding the meta (⌘) or ctrl key,
+       * which open the page in a new tab.
+       */
+      return;
+    }
     this.navCtrl.setDirection(this.routerDirection, undefined, undefined, this.routerAnimation);
     ev.preventDefault();
   }
