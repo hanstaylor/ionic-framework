@@ -31,7 +31,7 @@ const getComponentClasses = (classes: unknown) => {
 };
 
 const getElementClasses = (ref: Ref<HTMLElement | undefined>, componentClasses: Set<string>, defaultClasses: string[] = []) => {
-  return [ ...Array.from(ref.value?.classList || []), ...defaultClasses ]
+  return [...Array.from(ref.value?.classList || []), ...defaultClasses]
     .filter((c: string, i, self) => !componentClasses.has(c) && self.indexOf(c) === i);
 };
 
@@ -126,9 +126,16 @@ export const defineContainer = <Props>(
       });
 
       const oldClick = props.onClick;
-      const handleClick = (ev: Event) => {
+      const handleClick = (ev: MouseEvent) => {
         if (oldClick !== undefined) {
           oldClick(ev);
+        }
+        if (ev.button === 0 && (ev.ctrlKey || ev.metaKey)) {
+          /**
+           * Ignore click events that include holding the meta (⌘) or ctrl key,
+           * which open the page in a new tab.
+           */
+          return;
         }
         if (!ev.defaultPrevented) {
           handleRouterLink(ev);
