@@ -54,10 +54,17 @@ export const createRoutingComponent = <PropType, ElementType>(
       attachProps(node, this.props, prevProps);
     }
 
-    private handleClick = (e: React.MouseEvent<PropType>) => {
+    private handleClick = (ev: React.MouseEvent<PropType>) => {
       const { routerLink, routerDirection, routerOptions, routerAnimation } = this.props;
       if (routerLink !== undefined) {
-        e.preventDefault();
+        if (ev.button === 0 && (ev.ctrlKey || ev.metaKey)) {
+          /**
+           * Ignore click events that include holding the meta (⌘) or ctrl key,
+           * which open the page in a new tab.
+           */
+          return;
+        }
+        ev.preventDefault();
         this.context.navigate(
           routerLink,
           routerDirection,
