@@ -29,6 +29,11 @@ export class TabBar implements ComponentInterface {
   @Prop() color?: Color;
 
   /**
+   * Whether to hide the tabs when keyboard is summoned
+   */
+  @Prop() hideOnKeyboard: boolean = true;
+
+  /**
    * The selected tab component
    */
   @Prop() selectedTab?: string;
@@ -58,7 +63,7 @@ export class TabBar implements ComponentInterface {
 
   @Listen('keyboardWillShow', { target: 'window' })
   protected onKeyboardWillShow() {
-    if (this.el.getAttribute('slot') !== 'top') {
+    if (this.el.getAttribute('slot') !== 'top' && this.hideOnKeyboard) {
       this.keyboardVisible = true;
     }
   }

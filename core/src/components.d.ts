@@ -2325,6 +2325,10 @@ export namespace Components {
          */
         "color"?: Color;
         /**
+         * Whether to hide the tabs when keyboard is summoned
+         */
+        "hideKeyboard"?: boolean;
+        /**
           * The mode determines which platform styles to use.
          */
         "mode"?: "ios" | "md";
