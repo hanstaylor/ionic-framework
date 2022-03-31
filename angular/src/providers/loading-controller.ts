@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { LoadingOptions, loadingController } from '@ionic/core';
+import { LoadingOptions, loadingController } from '@nfdoom/ionic-core';
 
 import { OverlayBaseController } from '../util/overlay';
 

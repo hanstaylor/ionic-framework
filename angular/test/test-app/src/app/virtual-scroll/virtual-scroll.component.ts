@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { HeaderFn } from '@ionic/core';
+import { HeaderFn } from '@nfdoom/ionic-core';
 import { IonVirtualScroll } from '@ionic/angular';
 
 @Component({

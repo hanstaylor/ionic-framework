@@ -2325,9 +2325,9 @@ export namespace Components {
          */
         "color"?: Color;
         /**
-         * Whether to hide the tabs when keyboard is summoned
+          * Whether to hide the tabs when keyboard is summoned
          */
-        "hideKeyboard"?: boolean;
+        "hideOnKeyboard": boolean;
         /**
           * The mode determines which platform styles to use.
          */
@@ -5638,6 +5638,10 @@ declare namespace LocalJSX {
           * The color to use from your application's color palette. Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`. For more information on colors, see [theming](/docs/theming/basics).
          */
         "color"?: Color;
+        /**
+          * Whether to hide the tabs when keyboard is summoned
+         */
+        "hideOnKeyboard"?: boolean;
         /**
           * The mode determines which platform styles to use.
          */

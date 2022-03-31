@@ -1,11 +1,11 @@
 # @ionic/angular
 
-Ionic Angular specific building blocks on top of [@ionic/core](https://www.npmjs.com/package/@ionic/core) components.
+Ionic Angular specific building blocks on top of [@nfdoom/ionic-core](https://www.npmjs.com/package/@nfdoom/ionic-core) components.
 
 
 ## Related
 
-* [Ionic Core Components](https://www.npmjs.com/package/@ionic/core)
+* [Ionic Core Components](https://www.npmjs.com/package/@nfdoom/ionic-core)
 * [Ionic Documentation](https://ionicframework.com/docs/)
 * [Ionic Worldwide Slack](http://ionicworldwide.herokuapp.com/)
 * [Ionic Forum](https://forum.ionicframework.com/)

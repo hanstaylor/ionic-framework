@@ -1,6 +1,6 @@
 {
-  "name": "@ionic/core",
-  "version": "5.3.5",
+  "name": "@nfdoom/ionic-core",
+  "version": "5.3.7",
   "description": "Base components for Ionic",
   "keywords": [
     "ionic",
@@ -61,7 +61,7 @@
     "tslint-react": "^5.0.0"
   },
   "scripts": {
-    "build": "npm run clean && npm run build.css && npm run build.vendor && stencil build --docs --es5 && npm run cdnloader",
+    "build": "npm run clean && npm run build.css && npm run build.vendor && stencil build --docs --es5",
     "build.vendor": "rollup --config ./scripts/swiper.rollup.config.js",
     "build.css": "npm run css.sass && npm run css.minify",
     "build.debug": "npm run clean && stencil build --debug",

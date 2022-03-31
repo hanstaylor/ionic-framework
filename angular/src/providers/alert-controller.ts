@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AlertOptions, alertController } from '@ionic/core';
+import { AlertOptions, alertController } from '@nfdoom/ionic-core';
 
 import { OverlayBaseController } from '../util/overlay';
 

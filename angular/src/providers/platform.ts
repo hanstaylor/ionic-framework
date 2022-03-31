@@ -1,6 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Inject, Injectable, NgZone } from '@angular/core';
-import { BackButtonEventDetail, KeyboardEventDetail, Platforms, getPlatforms, isPlatform } from '@ionic/core';
+import { BackButtonEventDetail, KeyboardEventDetail, Platforms, getPlatforms, isPlatform } from '@nfdoom/ionic-core';
 import { Subject, Subscription } from 'rxjs';
 
 export interface BackButtonEmitter extends Subject<BackButtonEventDetail> {

@@ -1,5 +1,5 @@
 import { ComponentFactoryResolver, Injectable, Injector } from '@angular/core';
-import { ModalOptions, modalController } from '@ionic/core';
+import { ModalOptions, modalController } from '@nfdoom/ionic-core';
 
 import { OverlayBaseController } from '../util/overlay';
 

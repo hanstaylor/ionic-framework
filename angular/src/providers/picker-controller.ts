@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { PickerOptions, pickerController } from '@ionic/core';
+import { PickerOptions, pickerController } from '@nfdoom/ionic-core';
 
 import { OverlayBaseController } from '../util/overlay';
 

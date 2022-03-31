@@ -1,7 +1,7 @@
 # Local @ionic/angular test/testapp development
 
 1. `npm install` at the root of `angular`
-2. `npm run build.dev` to build local `@ionic/angular` and `@ionic/core`
+2. `npm run build.dev` to build local `@ionic/angular` and `@nfdoom/ionic-core`
 3. `cd test/testapp` to the test app
 4. `npm install` in the test app directory
 5. `npm run serve` copies packages and serve the app (see package.json for more options)

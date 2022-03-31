@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { menuController } from '@ionic/core';
+import { menuController } from '@nfdoom/ionic-core';
 
 @Injectable({
   providedIn: 'root',

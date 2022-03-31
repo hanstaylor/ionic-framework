@@ -31,7 +31,7 @@ export class TabBar implements ComponentInterface {
   /**
    * Whether to hide the tabs when keyboard is summoned
    */
-  @Prop() hideOnKeyboard: boolean = true;
+  @Prop() hideOnKeyboard: boolean = false;
 
   /**
    * The selected tab component

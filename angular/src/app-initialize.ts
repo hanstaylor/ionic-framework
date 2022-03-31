@@ -1,5 +1,5 @@
 import { NgZone } from '@angular/core';
-import { applyPolyfills, defineCustomElements } from '@ionic/core/loader';
+import { applyPolyfills, defineCustomElements } from '@nfdoom/ionic-core/loader';
 
 import { Config } from './providers/config';
 import { IonicWindow } from './types/interfaces';

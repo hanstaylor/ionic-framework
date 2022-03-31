@@ -3,7 +3,7 @@
 /* auto-generated angular directive proxies */
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, NgZone } from "@angular/core";
 import { ProxyCmp, proxyOutputs } from "./proxies-utils";
-import { Components } from "@ionic/core";
+import { Components } from "@nfdoom/ionic-core";
 export declare interface IonApp extends Components.IonApp {
 }
 @Component({ selector: "ion-app", changeDetection: ChangeDetectionStrategy.OnPush, template: "<ng-content></ng-content>" })
@@ -785,8 +785,8 @@ export class IonSplitPane {
 }
 export declare interface IonTabBar extends Components.IonTabBar {
 }
-@ProxyCmp({ inputs: ["color", "mode", "selectedTab", "translucent"] })
-@Component({ selector: "ion-tab-bar", changeDetection: ChangeDetectionStrategy.OnPush, template: "<ng-content></ng-content>", inputs: ["color", "mode", "selectedTab", "translucent"] })
+@ProxyCmp({ inputs: ["color", "hideOnKeyboard", "mode", "selectedTab", "translucent"] })
+@Component({ selector: "ion-tab-bar", changeDetection: ChangeDetectionStrategy.OnPush, template: "<ng-content></ng-content>", inputs: ["color", "hideOnKeyboard", "mode", "selectedTab", "translucent"] })
 export class IonTabBar {
     protected el: HTMLElement;
     constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
