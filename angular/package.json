@@ -1,6 +1,6 @@
 {
   "name": "@nfdoom/ionic-angular",
-  "version": "5.3.7",
+  "version": "5.3.11",
   "description": "Angular specific wrappers for @nfdoom/ionic-core",
   "keywords": [
     "ionic",
@@ -42,7 +42,7 @@
     "validate": "npm i && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
-    "@nfdoom/ionic-core": "5.3.7",
+    "@nfdoom/ionic-core": "5.3.11",
     "tslib": "^1.9.3"
   },
   "peerDependencies": {
