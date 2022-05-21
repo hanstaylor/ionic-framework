@@ -2,7 +2,27 @@
 
 Checkboxes allow the selection of multiple options from a set of options. They appear as checked (ticked) when activated. Clicking on a checkbox will toggle the `checked` property. They can also be checked programmatically by setting the `checked` property.
 
+## Interfaces
 
+### CheckboxChangeEventDetail
+
+```typescript
+interface CheckboxChangeEventDetail<T = any> {
+  value: T;
+  checked: boolean;
+}
+```
+
+### CheckboxCustomEvent
+
+While not required, this interface can be used in place of the `CustomEvent` interface for stronger typing with Ionic events emitted from this component.
+
+```typescript
+interface CheckboxCustomEvent<T = any> extends CustomEvent {
+  detail: CheckboxChangeEventDetail<T>;
+  target: HTMLIonCheckboxElement;
+}
+```
 
 
 <!-- Auto Generated Below -->
@@ -228,8 +248,8 @@ export class CheckboxExample {
       <ion-label>{{entry.val}}</ion-label>
       <ion-checkbox
         slot="end"
-        @input="entry.checked = $event.target.value"
-        :value="entry.isChecked">
+        @update:modelValue="entry.isChecked = $event"
+        :modelValue="entry.isChecked">
       </ion-checkbox>
     </ion-item>
   </ion-list>
@@ -266,16 +286,16 @@ export default defineComponent({
 | `indeterminate` | `indeterminate` | If `true`, the checkbox will visually appear as indeterminate.                                                                                                                                                                                                         | `boolean`             | `false`        |
 | `mode`          | `mode`          | The mode determines which platform styles to use.                                                                                                                                                                                                                      | `"ios" \| "md"`       | `undefined`    |
 | `name`          | `name`          | The name of the control, which is submitted with the form data.                                                                                                                                                                                                        | `string`              | `this.inputId` |
-| `value`         | `value`         | The value of the toggle does not mean if it's checked or not, use the `checked` property for that.  The value of a toggle is analogous to the value of a `<input type="checkbox">`, it's only used when the toggle participates in a native `<form>`.                  | `string`              | `'on'`         |
+| `value`         | `value`         | The value of the checkbox does not mean if it's checked or not, use the `checked` property for that.  The value of a checkbox is analogous to the value of an `<input type="checkbox">`, it's only used when the checkbox participates in a native `<form>`.           | `any`                 | `'on'`         |
 
 
 ## Events
 
-| Event       | Description                                    | Type                                     |
-| ----------- | ---------------------------------------------- | ---------------------------------------- |
-| `ionBlur`   | Emitted when the toggle loses focus.           | `CustomEvent<void>`                      |
-| `ionChange` | Emitted when the checked property has changed. | `CustomEvent<CheckboxChangeEventDetail>` |
-| `ionFocus`  | Emitted when the toggle has focus.             | `CustomEvent<void>`                      |
+| Event       | Description                                    | Type                                          |
+| ----------- | ---------------------------------------------- | --------------------------------------------- |
+| `ionBlur`   | Emitted when the checkbox loses focus.         | `CustomEvent<void>`                           |
+| `ionChange` | Emitted when the checked property has changed. | `CustomEvent<CheckboxChangeEventDetail<any>>` |
+| `ionFocus`  | Emitted when the checkbox has focus.           | `CustomEvent<void>`                           |
 
 
 ## Shadow Parts
@@ -302,6 +322,19 @@ export default defineComponent({
 | `--size`                 | Size of the checkbox icon                      |
 | `--transition`           | Transition of the checkbox icon                |
 
+
+## Dependencies
+
+### Used by
+
+ - ion-select-popover
+
+### Graph
+```mermaid
+graph TD;
+  ion-select-popover --> ion-checkbox
+  style ion-checkbox fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

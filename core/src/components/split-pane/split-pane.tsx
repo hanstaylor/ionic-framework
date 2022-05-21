@@ -29,7 +29,11 @@ export class SplitPane implements ComponentInterface {
   @State() visible = false;
 
   /**
-   * The content `id` of the split-pane's main content.
+   * The `id` of the main content. When using
+   * a router this is typically `ion-router-outlet`.
+   * When not using a router, this is typically
+   * your main view's `ion-content`. This is not the
+   * id of the `ion-content` inside of your `ion-menu`.
    */
   @Prop({ reflect: true }) contentId?: string;
 
@@ -56,7 +60,12 @@ export class SplitPane implements ComponentInterface {
     this.ionSplitPaneVisible.emit(detail);
   }
 
-  connectedCallback() {
+  async connectedCallback() {
+    // TODO: connectedCallback is fired in CE build
+    // before WC is defined. This needs to be fixed in Stencil.
+    if (typeof (customElements as any) !== 'undefined') {
+      await customElements.whenDefined('ion-split-pane');
+    }
     this.styleChildren();
     this.updateState();
   }

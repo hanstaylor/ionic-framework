@@ -16,9 +16,14 @@ export interface RouterEventDetail {
   to: string;
 }
 
+export interface RouterCustomEvent extends CustomEvent {
+  detail: RouterEventDetail;
+  target: HTMLIonRouterElement;
+}
+
 export interface RouteRedirect {
   from: string[];
-  to?: string[];
+  to?: ParsedRoute;
 }
 
 export interface RouteWrite {
@@ -34,8 +39,9 @@ export interface RouteID {
 }
 
 export interface RouteEntry {
+  /** Component tag name or tab name. */
   id: string;
-  path: string[];
+  segments: string[];
   params: {[key: string]: any} | undefined;
   beforeLeave?: NavigationHookCallback;
   beforeEnter?: NavigationHookCallback;
@@ -43,6 +49,13 @@ export interface RouteEntry {
 
 export interface RouteNode extends RouteEntry {
   children: RouteTree;
+}
+
+export interface ParsedRoute {
+  /** Parts of the route (non empty "/" separated parts of an URL). */
+  segments: string[];
+  /** Unparsed query string. */
+  queryString?: string;
 }
 
 export type RouterDirection = 'forward' | 'back' | 'root';

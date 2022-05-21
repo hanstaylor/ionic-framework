@@ -1,9 +1,11 @@
 import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, State, Watch, forceUpdate, h } from '@stencil/core';
+import { arrowBackSharp, closeCircle, closeSharp, searchOutline, searchSharp } from 'ionicons/icons';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
 import { AutocompleteTypes, Color, SearchbarChangeEventDetail, StyleEventDetail } from '../../interface';
 import { debounceEvent, raf } from '../../utils/helpers';
+import { isRTL } from '../../utils/rtl';
 import { createColorClasses } from '../../utils/theme';
 
 /**
@@ -33,7 +35,7 @@ export class Searchbar implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If `true`, enable searchbar animation.
@@ -52,9 +54,9 @@ export class Searchbar implements ComponentInterface {
 
   /**
    * Set the cancel button icon. Only applies to `md` mode.
-   * Defaults to `"arrow-back-sharp"`.
+   * Defaults to `arrow-back-sharp`.
    */
-  @Prop() cancelButtonIcon = config.get('backButtonIcon', 'arrow-back-sharp') as string;
+  @Prop() cancelButtonIcon = config.get('backButtonIcon', arrowBackSharp) as string;
 
   /**
    * Set the the cancel button text. Only applies to `ios` mode.
@@ -62,12 +64,12 @@ export class Searchbar implements ComponentInterface {
   @Prop() cancelButtonText = 'Cancel';
 
   /**
-   * Set the clear icon. Defaults to `"close-circle"` for `ios` and `"close-sharp"` for `md`.
+   * Set the clear icon. Defaults to `close-circle` for `ios` and `close-sharp` for `md`.
    */
   @Prop() clearIcon?: string;
 
   /**
-   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke.
+   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke. This also impacts form bindings such as `ngModel` or `v-model`.
    */
   @Prop() debounce = 250;
 
@@ -107,8 +109,8 @@ export class Searchbar implements ComponentInterface {
   @Prop() placeholder = 'Search';
 
   /**
-   * The icon to use as the search icon. Defaults to `"search-outline"` in
-   * `ios` mode and `"search-sharp"` in `md` mode.
+   * The icon to use as the search icon. Defaults to `search-outline` in
+   * `ios` mode and `search-sharp` in `md` mode.
    */
   @Prop() searchIcon?: string;
 
@@ -120,6 +122,16 @@ export class Searchbar implements ComponentInterface {
    * of focus state.
    */
   @Prop() showCancelButton: 'never' | 'focus' | 'always' = 'never';
+
+  /**
+   * Sets the behavior for the clear button. Defaults to `"focus"`.
+   * Setting to `"focus"` shows the clear button on focus if the
+   * input is not empty.
+   * Setting to `"never"` hides the clear button.
+   * Setting to `"always"` shows the clear button regardless
+   * of focus state, but only if the input is not empty.
+   */
+  @Prop() showClearButton: 'never' | 'focus' | 'always' = 'always';
 
   /**
    * If `true`, enable spellcheck on the input.
@@ -231,7 +243,7 @@ export class Searchbar implements ComponentInterface {
   /**
    * Clears the input field and triggers the control change.
    */
-  private onClearInput = (ev?: Event) => {
+  private onClearInput = (ev?: Event, shouldFocus?: boolean) => {
     this.ionClear.emit();
 
     if (ev) {
@@ -246,6 +258,16 @@ export class Searchbar implements ComponentInterface {
       if (value !== '') {
         this.value = '';
         this.ionInput.emit();
+
+        /**
+         * When tapping clear button
+         * ensure input is focused after
+         * clearing input so users
+         * can quickly start typing.
+         */
+        if (shouldFocus && !this.focused) {
+          this.setFocus();
+        }
       }
     }, 16 * 4);
   }
@@ -330,7 +352,7 @@ export class Searchbar implements ComponentInterface {
     if (!inputEl) {
       return;
     }
-    const isRTL = document.dir === 'rtl';
+    const rtl = isRTL(this.el);
     const iconEl = (this.el.shadowRoot || this.el).querySelector('.searchbar-search-icon') as HTMLElement;
 
     if (this.shouldAlignLeft) {
@@ -356,7 +378,7 @@ export class Searchbar implements ComponentInterface {
         const iconLeft = 'calc(50% - ' + ((textWidth / 2) + 30) + 'px)';
 
         // Set the input padding start and icon margin start
-        if (isRTL) {
+        if (rtl) {
           inputEl.style.paddingRight = inputLeft;
           iconEl.style.marginRight = iconLeft;
         } else {
@@ -371,7 +393,7 @@ export class Searchbar implements ComponentInterface {
    * Show the iOS Cancel button on focus, hide it offscreen otherwise
    */
   private positionCancelButton() {
-    const isRTL = document.dir === 'rtl';
+    const rtl = isRTL(this.el);
     const cancelButton = (this.el.shadowRoot || this.el).querySelector('.searchbar-cancel-button') as HTMLElement;
     const shouldShowCancel = this.shouldShowCancelButton();
 
@@ -379,7 +401,7 @@ export class Searchbar implements ComponentInterface {
       const cancelStyle = cancelButton.style;
       this.isCancelVisible = shouldShowCancel;
       if (shouldShowCancel) {
-        if (isRTL) {
+        if (rtl) {
           cancelStyle.marginLeft = '0';
         } else {
           cancelStyle.marginRight = '0';
@@ -387,7 +409,7 @@ export class Searchbar implements ComponentInterface {
       } else {
         const offset = cancelButton.offsetWidth;
         if (offset > 0) {
-          if (isRTL) {
+          if (rtl) {
             cancelStyle.marginLeft = -offset + 'px';
           } else {
             cancelStyle.marginRight = -offset + 'px';
@@ -419,12 +441,26 @@ export class Searchbar implements ComponentInterface {
     return true;
   }
 
+  /**
+   * Determines whether or not the clear button should be visible onscreen.
+   * Clear button should be shown if one of two conditions applies:
+   * 1. `showClearButton` is set to `always`.
+   * 2. `showClearButton` is set to `focus`, and the searchbar has been focused.
+   */
+  private shouldShowClearButton(): boolean {
+    if ((this.showClearButton === 'never') || (this.showClearButton === 'focus' && !this.focused)) {
+      return false;
+    }
+
+    return true;
+  }
+
   render() {
     const { cancelButtonText } = this;
     const animated = this.animated && config.getBoolean('animated', true);
     const mode = getIonMode(this);
-    const clearIcon = this.clearIcon || (mode === 'ios' ? 'close-circle' : 'close-sharp');
-    const searchIcon = this.searchIcon || (mode === 'ios' ? 'search-outline' : 'search-sharp');
+    const clearIcon = this.clearIcon || (mode === 'ios' ? closeCircle : closeSharp);
+    const searchIcon = this.searchIcon || (mode === 'ios' ? searchOutline : searchSharp);
     const shouldShowCancelButton = this.shouldShowCancelButton();
 
     const cancelButton = (this.showCancelButton !== 'never') && (
@@ -440,7 +476,7 @@ export class Searchbar implements ComponentInterface {
         class="searchbar-cancel-button"
       >
         <div aria-hidden="true">
-          { mode === 'md'
+          {mode === 'md'
             ? <ion-icon aria-hidden="true" mode={mode} icon={this.cancelButtonIcon} lazy={false}></ion-icon>
             : cancelButtonText
           }
@@ -460,6 +496,7 @@ export class Searchbar implements ComponentInterface {
           'searchbar-has-value': this.hasValue(),
           'searchbar-left-aligned': this.shouldAlignLeft,
           'searchbar-has-focus': this.focused,
+          'searchbar-should-show-clear': this.shouldShowClearButton(),
           'searchbar-should-show-cancel': this.shouldShowCancelButton()
         })}
       >
@@ -492,8 +529,8 @@ export class Searchbar implements ComponentInterface {
             type="button"
             no-blur
             class="searchbar-clear-button"
-            onMouseDown={this.onClearInput}
-            onTouchStart={this.onClearInput}
+            onMouseDown={ev => this.onClearInput(ev, true)}
+            onTouchStart={ev => this.onClearInput(ev, true)}
           >
             <ion-icon aria-hidden="true" mode={mode} icon={clearIcon} lazy={false} class="searchbar-clear-icon"></ion-icon>
           </button>

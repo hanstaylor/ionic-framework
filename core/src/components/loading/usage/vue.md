@@ -6,8 +6,6 @@
 </template>
 
 <script>
-
-<script>
 import { IonButton, loadingController } from '@ionic/vue';
 import { defineComponent } from 'vue';
 
@@ -63,7 +61,7 @@ Developers can also use this component directly in their template:
     cssClass="my-custom-class"
     message="Please wait..."
     :duration="timeout"
-    @onDidDismiss="setOpen(false)"
+    @didDismiss="setOpen(false)"
   >
   </ion-loading>
 </template>

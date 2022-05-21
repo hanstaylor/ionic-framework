@@ -1,10 +1,11 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Prop, State, Watch, h, writeTask } from '@stencil/core';
+import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Listen, Prop, State, Watch, h, writeTask } from '@stencil/core';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
 import { Color, SegmentChangeEventDetail, StyleEventDetail } from '../../interface';
 import { Gesture, GestureDetail } from '../../utils/gesture';
 import { pointerCoord } from '../../utils/helpers';
+import { isRTL } from '../../utils/rtl';
 import { createColorClasses, hostContext } from '../../utils/theme';
 
 /**
@@ -35,7 +36,23 @@ export class Segment implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
+  @Watch('color')
+  protected colorChanged(value?: Color, oldValue?: Color) {
+
+    /**
+     * If color is set after not having
+     * previously been set (or vice versa),
+     * we need to emit style so the segment-buttons
+     * can apply their color classes properly.
+     */
+    if (
+      (oldValue === undefined && value !== undefined) ||
+      (oldValue !== undefined && value === undefined)
+    ) {
+      this.emitStyle();
+    }
+  }
 
   /**
    * If `true`, the user cannot interact with the segment.
@@ -48,6 +65,16 @@ export class Segment implements ComponentInterface {
    * in order to swipe to see hidden buttons.
    */
   @Prop() scrollable = false;
+
+  /**
+   * If `true`, users will be able to swipe between segment buttons to activate them.
+   */
+  @Prop() swipeGesture = true;
+
+  @Watch('swipeGesture')
+  swipeGestureChanged() {
+    this.gestureChanged();
+  }
 
   /**
    * the value of the segment.
@@ -65,6 +92,12 @@ export class Segment implements ComponentInterface {
       }
     }
   }
+
+  /**
+   * If `true`, navigating to an `ion-segment-button` with the keyboard will focus and select the element.
+   * If `false`, keyboard navigation will only focus the `ion-segment-button` element.
+   */
+  @Prop() selectOnFocus = false;
 
   /**
    * Emitted when the value property has changed and any
@@ -95,8 +128,8 @@ export class Segment implements ComponentInterface {
   }
 
   private gestureChanged() {
-    if (this.gesture && !this.scrollable) {
-      this.gesture.enable(!this.disabled);
+    if (this.gesture) {
+      this.gesture.enable(!this.scrollable && !this.disabled && this.swipeGesture);
     }
   }
 
@@ -110,6 +143,7 @@ export class Segment implements ComponentInterface {
 
   async componentDidLoad() {
     this.setCheckedClasses();
+    this.ensureFocusable();
 
     this.gesture = (await import('../../utils/gesture')).createGesture({
       el: this.el,
@@ -121,7 +155,6 @@ export class Segment implements ComponentInterface {
       onMove: ev => this.onMove(ev),
       onEnd: ev => this.onEnd(ev),
     });
-    this.gesture.enable(!this.scrollable);
     this.gestureChanged();
 
     if (this.disabled) {
@@ -244,7 +277,7 @@ export class Segment implements ComponentInterface {
 
     // Scale the indicator width to match the previous indicator width
     // and translate it on top of the previous indicator
-    const transform = `translate(${xPosition}px, 0) scaleX(${widthDelta})`;
+    const transform = `translate3d(${xPosition}px, 0, 0) scaleX(${widthDelta})`;
 
     writeTask(() => {
       // Remove the transition before positioning on top of the previous indicator
@@ -282,7 +315,7 @@ export class Segment implements ComponentInterface {
   }
 
   private setNextIndex(detail: GestureDetail, isEnd = false) {
-    const isRTL = document.dir === 'rtl';
+    const rtl = isRTL(this.el);
     const activated = this.activated;
     const buttons = this.getButtons();
     const index = buttons.findIndex(button => button.value === this.value);
@@ -306,10 +339,20 @@ export class Segment implements ComponentInterface {
     const currentX = detail.currentX;
 
     const previousY = rect.top + (rect.height / 2);
-    const nextEl = document.elementFromPoint(currentX, previousY) as HTMLIonSegmentButtonElement;
 
-    const decreaseIndex = isRTL ? currentX > (left + width) : currentX < left;
-    const increaseIndex = isRTL ? currentX < left : currentX > (left + width);
+    /**
+     * Segment can be used inside the shadow dom
+     * so doing document.elementFromPoint would never
+     * return a segment button in that instance.
+     * We use getRootNode to which will return the parent
+     * shadow root if used inside a shadow component and
+     * returns document otherwise.
+     */
+    const root = this.el.getRootNode() as Document | ShadowRoot;
+    const nextEl = root.elementFromPoint(currentX, previousY) as HTMLIonSegmentButtonElement;
+
+    const decreaseIndex = rtl ? currentX > (left + width) : currentX < left;
+    const increaseIndex = rtl ? currentX < left : currentX > (left + width);
 
     // If the indicator is currently activated then we have started the gesture
     // on top of the checked button so we need to slide the indicator
@@ -322,7 +365,7 @@ export class Segment implements ComponentInterface {
         if (newIndex >= 0) {
           nextIndex = newIndex;
         }
-      // Increase index, moves right in LTR & left in RTL
+        // Increase index, moves right in LTR & left in RTL
       } else if (increaseIndex) {
         if (activated && !isEnd) {
 
@@ -374,9 +417,18 @@ export class Segment implements ComponentInterface {
   private onClick = (ev: Event) => {
     const current = ev.target as HTMLIonSegmentButtonElement;
     const previous = this.checked;
+
+    // If the current element is a segment then that means
+    // the user tried to swipe to a segment button and
+    // click a segment button at the same time so we should
+    // not update the checked segment button
+    if (current.tagName === 'ION-SEGMENT') {
+      return;
+    }
+
     this.value = current.value;
 
-    if (this.scrollable) {
+    if (this.scrollable || !this.swipeGesture) {
       if (previous) {
         this.checkButton(previous, current);
       } else {
@@ -387,10 +439,79 @@ export class Segment implements ComponentInterface {
     this.checked = current;
   }
 
+  private getSegmentButton = (selector: 'first' | 'last' | 'next' | 'previous'): HTMLIonSegmentButtonElement | null => {
+    const buttons = this.getButtons().filter(button => !button.disabled);
+    const currIndex = buttons.findIndex(button => button === document.activeElement);
+
+    switch (selector) {
+      case 'first':
+        return buttons[0];
+      case 'last':
+        return buttons[buttons.length - 1];
+      case 'next':
+        return buttons[currIndex + 1] || buttons[0];
+      case 'previous':
+        return buttons[currIndex - 1] || buttons[buttons.length - 1];
+      default:
+        return null;
+    }
+  }
+
+  @Listen('keydown')
+  onKeyDown(ev: KeyboardEvent) {
+    const rtl = isRTL(this.el);
+    let keyDownSelectsButton = this.selectOnFocus;
+    let current;
+    switch (ev.key) {
+      case 'ArrowRight':
+        ev.preventDefault();
+        current = rtl ? this.getSegmentButton('previous') : this.getSegmentButton('next');
+        break;
+      case 'ArrowLeft':
+        ev.preventDefault();
+        current = rtl ? this.getSegmentButton('next') : this.getSegmentButton('previous')
+        break;
+      case 'Home':
+        ev.preventDefault();
+        current = this.getSegmentButton('first');
+        break;
+      case 'End':
+        ev.preventDefault();
+        current = this.getSegmentButton('last');
+        break;
+      case ' ':
+      case 'Enter':
+        ev.preventDefault();
+        current = document.activeElement as HTMLIonSegmentButtonElement;
+        keyDownSelectsButton = true;
+      default:
+        break;
+    }
+
+    if (!current) { return; }
+
+    if (keyDownSelectsButton) {
+      const previous = this.checked || current;
+      this.checkButton(previous, current);
+    }
+    current.focus();
+  }
+
+  /* By default, focus is delegated to the selected `ion-segment-button`.
+   * If there is no selected button, focus will instead pass to the first child button.
+  **/
+  private ensureFocusable() {
+    if (this.value !== undefined) { return };
+
+    const buttons = this.getButtons();
+    buttons[0]?.setAttribute('tabindex', '0');
+  }
+
   render() {
     const mode = getIonMode(this);
     return (
       <Host
+        role="tablist"
         onClick={this.onClick}
         class={createColorClasses(this.color, {
           [mode]: true,

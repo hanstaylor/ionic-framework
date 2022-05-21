@@ -1,6 +1,7 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, Watch, h } from '@stencil/core';
+import { Build, Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, Watch, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
+import { componentOnReady } from '../../utils/helpers'
 
 import { SwiperInterface, SwiperOptions } from './swiper/swiper-interface';
 
@@ -23,14 +24,12 @@ export class Slides implements ComponentInterface {
   private mutationO?: MutationObserver;
   private readySwiper!: (swiper: SwiperInterface) => void;
   private swiper: Promise<SwiperInterface> = new Promise(resolve => { this.readySwiper = resolve; });
-  private syncSwiper?: SwiperInterface;
-  private didInit = false;
 
   @Element() el!: HTMLIonSlidesElement;
 
   /**
    * Options to pass to the swiper instance.
-   * See http://idangero.us/swiper/api/ for valid options
+   * See https://swiperjs.com/swiper-api for valid options
    */
   @Prop() options: any = {}; // SwiperOptions;  // TODO
 
@@ -38,8 +37,10 @@ export class Slides implements ComponentInterface {
   async optionsChanged() {
     if (this.swiperReady) {
       const swiper = await this.getSwiper();
-      Object.assign(swiper.params, this.options);
-      await this.update();
+      if (swiper?.params) {
+        Object.assign(swiper.params, this.options);
+        await this.update();
+      }
     }
   }
 
@@ -133,9 +134,12 @@ export class Slides implements ComponentInterface {
    */
   @Event() ionSlideTouchEnd!: EventEmitter<void>;
 
+  componentWillLoad() {
+    console.warn(`[Deprecation Warning]: ion-slides has been deprecated and will be removed in Ionic Framework v7.0. We recommend using the framework-specific integrations that Swiper.js provides, allowing for faster bug fixes and an improved developer experience. See https://ionicframework.com/docs/api/slides for more information including migration steps.`);
+  }
+
   connectedCallback() {
-    // tslint:disable-next-line: strict-type-predicates
-    if (typeof MutationObserver !== 'undefined') {
+    if (Build.isBrowser) {
       const mut = this.mutationO = new MutationObserver(() => {
         if (this.swiperReady) {
           this.update();
@@ -146,12 +150,9 @@ export class Slides implements ComponentInterface {
         subtree: true
       });
 
-      this.el.componentOnReady().then(() => {
-        if (!this.didInit) {
-          this.didInit = true;
+      componentOnReady(this.el, () => {
           this.initSwiper();
-        }
-      });
+      })
     }
   }
 
@@ -160,23 +161,6 @@ export class Slides implements ComponentInterface {
       this.mutationO.disconnect();
       this.mutationO = undefined;
     }
-
-    /**
-     * We need to synchronously destroy
-     * swiper otherwise it is possible
-     * that it will be left in a
-     * destroyed state if connectedCallback
-     * is called multiple times
-     */
-    const swiper = this.syncSwiper;
-    if (swiper !== undefined) {
-      swiper.destroy(true, true);
-      this.swiper = new Promise(resolve => { this.readySwiper = resolve; });
-      this.swiperReady = false;
-      this.syncSwiper = undefined;
-    }
-
-    this.didInit = false;
   }
 
   /**
@@ -346,7 +330,7 @@ export class Slides implements ComponentInterface {
   /**
    * Get the Swiper instance.
    * Use this to access the full Swiper API.
-   * See https://idangero.us/swiper/api/ for all API options.
+   * See https://swiperjs.com/swiper-api for all API options.
    */
   @Method()
   async getSwiper(): Promise<any> {
@@ -362,7 +346,6 @@ export class Slides implements ComponentInterface {
     await waitForSlides(this.el);
     const swiper = new Swiper(this.el, finalOptions);
     this.swiperReady = true;
-    this.syncSwiper = swiper;
     this.readySwiper(swiper);
   }
 
@@ -476,6 +459,8 @@ export class Slides implements ComponentInterface {
         init: () => {
           setTimeout(() => {
             this.ionSlidesDidLoad.emit();
+            // Forces the swiper instance to update after initializing.
+            this.update();
           }, 20);
         },
         slideChangeTransitionStart: this.ionSlideWillChange.emit,
@@ -530,6 +515,6 @@ export class Slides implements ComponentInterface {
 
 const waitForSlides = (el: HTMLElement) => {
   return Promise.all(
-    Array.from(el.querySelectorAll('ion-slide')).map(s => s.componentOnReady())
+    Array.from(el.querySelectorAll('ion-slide')).map(s => new Promise(resolve => componentOnReady(s, resolve)))
   );
 };

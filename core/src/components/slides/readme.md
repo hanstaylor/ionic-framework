@@ -3,6 +3,7 @@
 The Slides component is a multi-section container. Each section can be swiped
 or dragged between. It contains any number of [Slide](../slide) components.
 
+This guide will cover migration from the deprecated `ion-slides` component to the framework-specific solutions that Swiper.js provides as well as the existing `ion-slides` API for developers who are still using that component.
 
 Adopted from Swiper.js:
 The most modern mobile touch slider and framework with hardware accelerated transitions.
@@ -14,6 +15,44 @@ The iDangero.us
 http://www.idangero.us/
 
 Licensed under MIT
+
+## Migration
+
+With the release of Ionic Framework v6, the Ionic Team has deprecated the `ion-slides` and `ion-slide` components in favor of using the official framework integrations provided by Swiper. Fear not! You will still be able to use slides components in your application. Additionally, because you are still using Swiper, the functionality of your slides component should remain exactly the same.
+
+### What is Swiper.js?
+
+Swiper.js is the carousel/slider library that powers `ion-slides`. The library is bundled automatically with all versions of Ionic Framework. When Ionic Framework v4. was first released, Swiper did not have framework specific integrations of its library, so `ion-slides` was created as a way of bridging the gap between the core Swiper library and frameworks such as Angular, React, and Vue.
+
+Since then, the Swiper team has released framework specific integrations of Swiper.js for Angular, React, Vue, and more!
+
+### What are the benefits of this change?
+
+There are several benefits for members of the Ionic Framework community. By using the official Swiper.js framework integrations:
+
+- Developers can now be in control of the exact version of Swiper.js they want to use. Previously, developers would need to rely on the Ionic Team to update the version internally and release a new version of Ionic Framework.
+- The Ionic Team can spend more time triaging and fixing other non-slides issues, speeding up our development process so we can make the framework work better for our community.
+- Developers should experience fewer bugs.
+- Application bundle sizes can shrink in some cases. By installing Swiper.js as a 3rd party dependency in your application, bundlers such as Webpack or Rollup should be able to treeshake your code better.
+- Developers have access to new features that they previously did not have when using `ion-slides`.
+
+### How long do I have to migrate?
+
+We plan to remove `ion-slides` and `ion-slide` in Ionic Framework v7. `ion-slides` and `ion-slide` will continue to be available for the entire Ionic Framework v6 lifecycle but will only receive critical bug fixes.
+
+### How do I migrate?
+
+Since the underlying technology that powers your slides is the same, the migration process is easy! Follow the guides below for your specific framework.
+
+[Migration for Ionic Angular users](../angular/slides)
+
+[Migration for Ionic React users](../react/slides)
+
+[Migration for Ionic Vue users](../vue/slides)
+
+------
+
+The following documentation applies to the `ion-slides` component.
 
 ## Custom Animations
 
@@ -459,7 +498,7 @@ import { Component } from '@angular/core';
 })
 export class SlideExample {
   // Optional parameters to pass to the swiper instance.
-  // See http://idangero.us/swiper/api/ for valid options.
+  // See https://swiperjs.com/swiper-api for valid options.
   slideOpts = {
     initialSlide: 1,
     speed: 400
@@ -500,7 +539,7 @@ ion-slides {
 var slides = document.querySelector('ion-slides');
 
 // Optional parameters to pass to the swiper instance.
-// See http://idangero.us/swiper/api/ for valid options.
+// See https://swiperjs.com/swiper-api for valid options.
 slides.options = {
   initialSlide: 1,
   speed: 400
@@ -522,7 +561,7 @@ import React from 'react';
 import { IonSlides, IonSlide, IonContent } from '@ionic/react';
 
 // Optional parameters to pass to the swiper instance.
-// See http://idangero.us/swiper/api/ for valid options.
+// See https://swiperjs.com/swiper-api for valid options.
 const slideOpts = {
   initialSlide: 1,
   speed: 400
@@ -564,7 +603,7 @@ import { Component, h } from '@stencil/core';
 })
 export class SlidesExample {
   // Optional parameters to pass to the swiper instance.
-  // See http://idangero.us/swiper/api/ for valid options.
+  // See https://swiperjs.com/swiper-api for valid options.
   private slideOpts = {
     initialSlide: 1,
     speed: 400
@@ -625,7 +664,7 @@ import { defineComponent } from 'vue';
 export default defineComponent({
   components: { IonSlides, IonSlide },
   setup() {
-    // Optional parameters to pass to the swiper instance. See http://idangero.us/swiper/api/ for valid options.
+    // Optional parameters to pass to the swiper instance. See https://swiperjs.com/swiper-api for valid options.
     const slideOpts = {
       initialSlide: 1,
       speed: 400
@@ -640,12 +679,12 @@ export default defineComponent({
 
 ## Properties
 
-| Property    | Attribute   | Description                                                                                  | Type            | Default     |
-| ----------- | ----------- | -------------------------------------------------------------------------------------------- | --------------- | ----------- |
-| `mode`      | `mode`      | The mode determines which platform styles to use.                                            | `"ios" \| "md"` | `undefined` |
-| `options`   | `options`   | Options to pass to the swiper instance. See http://idangero.us/swiper/api/ for valid options | `any`           | `{}`        |
-| `pager`     | `pager`     | If `true`, show the pagination.                                                              | `boolean`       | `false`     |
-| `scrollbar` | `scrollbar` | If `true`, show the scrollbar.                                                               | `boolean`       | `false`     |
+| Property    | Attribute   | Description                                                                                   | Type            | Default     |
+| ----------- | ----------- | --------------------------------------------------------------------------------------------- | --------------- | ----------- |
+| `mode`      | `mode`      | The mode determines which platform styles to use.                                             | `"ios" \| "md"` | `undefined` |
+| `options`   | `options`   | Options to pass to the swiper instance. See https://swiperjs.com/swiper-api for valid options | `any`           | `{}`        |
+| `pager`     | `pager`     | If `true`, show the pagination.                                                               | `boolean`       | `false`     |
+| `scrollbar` | `scrollbar` | If `true`, show the scrollbar.                                                                | `boolean`       | `false`     |
 
 
 ## Events
@@ -696,7 +735,7 @@ Type: `Promise<number>`
 
 Get the Swiper instance.
 Use this to access the full Swiper API.
-See https://idangero.us/swiper/api/ for all API options.
+See https://swiperjs.com/swiper-api for all API options.
 
 #### Returns
 

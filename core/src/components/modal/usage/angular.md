@@ -1,3 +1,67 @@
+### Inline Modal
+
+```html
+<!-- Default -->
+<ion-modal [isOpen]="true">
+  <ng-template>
+    <ion-content>Modal Content</ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Use a trigger -->
+<ion-button id="trigger-button">Click to open modal</ion-button>
+<ion-modal trigger="trigger-button">
+  <ng-template>
+    <ion-content>Modal Content</ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Sheet Modal -->
+<ion-modal
+  [isOpen]="true"
+  [breakpoints]="[0.1, 0.5, 1]"
+  [initialBreakpoint]="0.5"
+>
+  <ng-template>
+    <ion-content>Modal Content</ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Card Modal -->
+<ion-modal
+  [isOpen]="true"
+  [swipeToClose]="true"
+  [presentingElement]="routerOutlet.nativeEl"
+>
+  <ng-template>
+    <ion-content>Modal Content</ion-content>
+  </ng-template>
+</ion-modal>
+
+<!-- Passing Props -->
+<ion-modal [isOpen]="true">
+  <ng-template>
+    <app-angular-component title="Ionic"></app-angular-component>
+  </ng-template>
+</ion-modal>
+```
+
+```typescript
+import { Component } from '@angular/core';
+import { IonRouterOutlet } from '@ionic/angular';
+
+@Component({
+  selector: 'modal-example',
+  templateUrl: 'modal-example.html',
+  styleUrls: ['./modal-example.css']
+})
+export class ModalExample {
+  constructor(public routerOutlet: IonRouterOutlet) {}
+}
+```
+
+### Modal Controller
+
 ```typescript
 import { Component } from '@angular/core';
 import { ModalController } from '@ionic/angular';
@@ -9,9 +73,10 @@ import { ModalPage } from '../modal/modal.page';
   styleUrls: ['./modal-example.css']
 })
 export class ModalExample {
-  constructor(public modalController: ModalController) {
+  // The `ion-modal` element reference.
+  modal: HTMLElement;
 
-  }
+  constructor(public modalController: ModalController) {}
 
   async presentModal() {
     const modal = await this.modalController.create({
@@ -36,7 +101,9 @@ export class ModalPage {
 }
 ```
 
-### Passing Data
+> If you need a wrapper element inside of your modal component, we recommend using a `<div class="ion-page">` so that the component dimensions are still computed properly.
+
+#### Passing Data
 
 During creation of a modal, data can be passed in through the `componentProps`.
 The previous example can be written to include data:
@@ -69,7 +136,7 @@ export class ModalPage {
 }
 ```
 
-### Dismissing a Modal
+#### Dismissing a Modal
 
 A modal can be dismissed by calling the dismiss method on the modal controller and optionally passing any data from the modal.
 
@@ -80,7 +147,7 @@ export class ModalPage {
   dismiss() {
     // using the injected ModalController this page
     // can "dismiss" itself and optionally pass back data
-    this.modalCtrl.dismiss({
+    this.modalController.dismiss({
       'dismissed': true
     });
   }
@@ -94,6 +161,22 @@ const { data } = await modal.onWillDismiss();
 console.log(data);
 ```
 
+#### Accessing the Modal Element
+
+When opening a modal with the modal controller, Ionic will assign the modal HTML element reference to the `modal` property on your component's class instance.
+
+You can use this property to directly access the `ion-modal` element to add or remove classes or handle additional checks.
+
+```ts
+export class ModalPage implements OnInit {
+  // The `ion-modal` element reference.
+  modal: HTMLElement;
+
+  ngOnInit() {
+    console.log('The HTML ion-modal element', this.modal); // <ion-modal></ion-modal>
+  }
+}
+```
 
 #### Lazy Loading
 
@@ -126,7 +209,7 @@ import { EventModalModule } from '../modals/event/event.module';
 export class CalendarComponentModule {}
 ```
 
-### Swipeable Modals
+#### Card Modals
 
 Modals in iOS mode have the ability to be presented in a card-style and swiped to close. The card-style presentation and swipe to close gesture are not mutually exclusive, meaning you can pick and choose which features you want to use. For example, you can have a card-style modal that cannot be swiped or a full sized modal that can be swiped.
 
@@ -155,19 +238,35 @@ In most scenarios, using the `ion-router-outlet` element as the `presentingEleme
 ```javascript
 import { ModalController } from '@ionic/angular';
 
-constructor(private modalCtrl: ModalController) {}
+constructor(private modalController: ModalController) {}
 
 async presentModal() {
   const modal = await this.modalController.create({
     component: ModalPage,
     cssClass: 'my-custom-class',
     swipeToClose: true,
-    presentingElement: await this.modalCtrl.getTop() // Get the top-most ion-modal
+    presentingElement: await this.modalController.getTop() // Get the top-most ion-modal
   });
   return await modal.present();
 }
 ```
 
+#### Sheet Modals
+
+```javascript
+import { IonRouterOutlet } from '@ionic/angular';
+
+constructor(private routerOutlet: IonRouterOutlet) {}
+
+async presentModal() {
+  const modal = await this.modalController.create({
+    component: ModalPage,
+    initialBreakpoint: 0.5,
+    breakpoints: [0, 0.5, 1]
+  });
+  return await modal.present();
+}
+```
 
 ### Style Placement
 

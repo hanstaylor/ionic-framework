@@ -2,7 +2,7 @@ import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Prop
 
 import { getIonMode } from '../../global/ionic-global';
 import { Color, StyleEventDetail } from '../../interface';
-import { createColorClasses } from '../../utils/theme';
+import { createColorClasses, hostContext } from '../../utils/theme';
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -25,7 +25,7 @@ export class Label implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * The position determines where and how the label behaves inside an item.
@@ -101,8 +101,10 @@ export class Label implements ComponentInterface {
       <Host
         class={createColorClasses(this.color, {
           [mode]: true,
+          'in-item-color': hostContext('ion-item.ion-color', this.el),
           [`label-${position}`]: position !== undefined,
-          [`label-no-animate`]: (this.noAnimate)
+          [`label-no-animate`]: (this.noAnimate),
+          'label-rtl': document.dir === 'rtl'
         })}
       >
       </Host>

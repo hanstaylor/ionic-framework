@@ -118,7 +118,28 @@ Customizing the interface dialog should be done by following the Customization s
 - [Action Sheet Customization](../action-sheet#customization)
 - [Popover Customization](../popover#customization)
 
-However, the Select Option does set a class for easier styling and allows for the ability to pass a class to the overlay option, see the [Select Options documentation](./select-option) for usage examples of customizing options.
+However, the Select Option does set a class for easier styling and allows for the ability to pass a class to the overlay option, see the [Select Options documentation](../select-option) for usage examples of customizing options.
+
+## Interfaces
+
+### SelectChangeEventDetail
+
+```typescript
+interface SelectChangeEventDetail<T = any> {
+  value: T;
+}
+```
+
+### SelectCustomEvent
+
+While not required, this interface can be used in place of the `CustomEvent` interface for stronger typing with Ionic events emitted from this component.
+
+```typescript
+interface SelectCustomEvent<T = any> extends CustomEvent {
+  detail: SelectChangeEventDetail<T>;
+  target: HTMLIonSelectElement;
+}
+```
 
 <!-- Auto Generated Below -->
 
@@ -1357,7 +1378,7 @@ export default defineComponent({
 | `multiple`         | `multiple`          | If `true`, the select can accept multiple values.                                                                                                                                                                                                                                                                                                         | `boolean`                                                                            | `false`        |
 | `name`             | `name`              | The name of the control, which is submitted with the form data.                                                                                                                                                                                                                                                                                           | `string`                                                                             | `this.inputId` |
 | `okText`           | `ok-text`           | The text to display on the ok button.                                                                                                                                                                                                                                                                                                                     | `string`                                                                             | `'OK'`         |
-| `placeholder`      | `placeholder`       | The text to display when the select is empty.                                                                                                                                                                                                                                                                                                             | `null \| string \| undefined`                                                        | `undefined`    |
+| `placeholder`      | `placeholder`       | The text to display when the select is empty.                                                                                                                                                                                                                                                                                                             | `string \| undefined`                                                                | `undefined`    |
 | `selectedText`     | `selected-text`     | The text to display instead of the selected option's value.                                                                                                                                                                                                                                                                                               | `null \| string \| undefined`                                                        | `undefined`    |
 | `value`            | `value`             | the value of the select.                                                                                                                                                                                                                                                                                                                                  | `any`                                                                                | `undefined`    |
 
@@ -1406,6 +1427,41 @@ Type: `Promise<any>`
 | `--placeholder-color`   | Color of the select placeholder text                                                                      |
 | `--placeholder-opacity` | Opacity of the select placeholder text                                                                    |
 
+
+## Dependencies
+
+### Depends on
+
+- ion-select-popover
+- [ion-popover](../popover)
+- [ion-action-sheet](../action-sheet)
+- [ion-alert](../alert)
+
+### Graph
+```mermaid
+graph TD;
+  ion-select --> ion-select-popover
+  ion-select --> ion-popover
+  ion-select --> ion-action-sheet
+  ion-select --> ion-alert
+  ion-select-popover --> ion-item
+  ion-select-popover --> ion-checkbox
+  ion-select-popover --> ion-label
+  ion-select-popover --> ion-radio-group
+  ion-select-popover --> ion-radio
+  ion-select-popover --> ion-list
+  ion-select-popover --> ion-list-header
+  ion-item --> ion-icon
+  ion-item --> ion-ripple-effect
+  ion-item --> ion-note
+  ion-popover --> ion-backdrop
+  ion-action-sheet --> ion-backdrop
+  ion-action-sheet --> ion-icon
+  ion-action-sheet --> ion-ripple-effect
+  ion-alert --> ion-ripple-effect
+  ion-alert --> ion-backdrop
+  style ion-select fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

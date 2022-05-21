@@ -1,5 +1,5 @@
 import { LocationStrategy } from '@angular/common';
-import { Directive, ElementRef, HostListener, Optional } from '@angular/core';
+import { ElementRef, OnChanges, OnInit, Directive, HostListener, Input, Optional } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AnimationBuilder, RouterDirection } from '@nfdoom/ionic-core';
 import { Subscription } from 'rxjs';
@@ -8,13 +8,12 @@ import { NavController } from '../../providers/nav-controller';
 
 @Directive({
   selector: '[routerLink]',
-  inputs: ['routerDirection', 'routerAnimation']
 })
-export class RouterLinkDelegate {
-
-  private subscription?: Subscription;
-
+export class RouterLinkDelegateDirective implements OnInit, OnChanges {
+  @Input()
   routerDirection: RouterDirection = 'forward';
+
+  @Input()
   routerAnimation?: AnimationBuilder;
 
   constructor(
@@ -22,25 +21,19 @@ export class RouterLinkDelegate {
     private navCtrl: NavController,
     private elementRef: ElementRef,
     private router: Router,
-    @Optional() private routerLink?: RouterLink,
-  ) { }
+    @Optional() private routerLink?: RouterLink
+  ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.updateTargetUrlAndHref();
   }
 
-  ngOnChanges(): any {
+  ngOnChanges(): void {
     this.updateTargetUrlAndHref();
-  }
-
-  ngOnDestroy(): any {
-    if (this.subscription) {
-      this.subscription.unsubscribe();
-    }
   }
 
   private updateTargetUrlAndHref() {
-    if (this.routerLink) {
+    if (this.routerLink?.urlTree) {
       const href = this.locationStrategy.prepareExternalUrl(this.router.serializeUrl(this.routerLink.urlTree));
       this.elementRef.nativeElement.href = href;
     }
@@ -50,7 +43,7 @@ export class RouterLinkDelegate {
    * @internal
    */
   @HostListener('click', ['$event'])
-  onClick(ev: UIEvent) {
+  onClick(ev: UIEvent): void {
     this.navCtrl.setDirection(this.routerDirection, undefined, undefined, this.routerAnimation);
     ev.preventDefault();
   }

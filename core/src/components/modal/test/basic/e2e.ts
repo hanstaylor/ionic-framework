@@ -56,18 +56,43 @@ test('modal: return focus', async () => {
     await modal.waitForNotVisible(),
   ]);
 
-  modal = await page.find('ion-modal');
-  expect(modal).toBeNull();
-
   const activeElement = await page.evaluateHandle(() => document.activeElement);
   const id = await activeElement.evaluate((node) => node.id);
   expect(id).toEqual('basic-modal');
 });
 
 test('modal: basic', async () => {
-  await testModal(DIRECTORY, '#basic-modal');
+  await testModal(DIRECTORY, '#basic-modal', false);
 });
 
 test('modal:rtl: basic', async () => {
-  await testModal(DIRECTORY, '#basic-modal', true);
+  await testModal(DIRECTORY, '#basic-modal', false, true);
 });
+
+test('modal: htmlAttributes', async () => {
+  const page = await newE2EPage({ url: '/src/components/modal/test/basic?ionic:_testing=true' });
+
+  await page.click('#basic-modal');
+  await page.waitForSelector('#basic-modal');
+
+  let alert = await page.find('ion-modal');
+
+  expect(alert).not.toBe(null);
+  await alert.waitForVisible();
+
+  const attribute = await page.evaluate((el) => document.querySelector('ion-modal').getAttribute('data-testid'));
+
+  expect(attribute).toEqual('basic-modal');
+});
+
+test('it should dismiss the modal when clicking the backdrop', async () => {
+  const page = await newE2EPage({ url: '/src/components/modal/test/basic?ionic:_testing=true' });
+  const ionModalDidPresent = await page.spyOnEvent('ionModalDidPresent');
+  const ionModalDidDismiss = await page.spyOnEvent('ionModalDidDismiss');
+
+  await page.click('#basic-modal');
+  await ionModalDidPresent.next();
+
+  await page.mouse.click(20, 20);
+  await ionModalDidDismiss.next();
+})

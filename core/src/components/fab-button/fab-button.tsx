@@ -1,4 +1,5 @@
 import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Prop, h } from '@stencil/core';
+import { close } from 'ionicons/icons';
 
 import { getIonMode } from '../../global/ionic-global';
 import { AnimationBuilder, Color, RouterDirection } from '../../interface';
@@ -27,7 +28,7 @@ export class FabButton implements ComponentInterface, AnchorInterface, ButtonInt
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If `true`, the fab button will be show a close icon.
@@ -105,7 +106,7 @@ export class FabButton implements ComponentInterface, AnchorInterface, ButtonInt
    * is pressed. Only applies if it is the main button inside of a fab containing a
    * fab list.
    */
-  @Prop() closeIcon = 'close';
+  @Prop() closeIcon = close;
 
   /**
    * Emitted when the button has focus.

@@ -13,7 +13,7 @@ This attribute lets you specify how wide the button should be. By default, butto
 
 ## Fill
 
-This attributes determines the background and border color of the button. By default, buttons have a solid background unless the button is inside of a toolbar, in which case it has a transparent background.
+This attribute determines the background and border color of the button. By default, buttons have a solid background unless the button is inside of a toolbar, in which case it has a transparent background.
 
 | Value          | Details                                                                      |
 |----------------|------------------------------------------------------------------------------|
@@ -365,6 +365,10 @@ export default defineComponent({
 
 ## Dependencies
 
+### Used by
+
+ - [ion-datetime](../datetime)
+
 ### Depends on
 
 - [ion-ripple-effect](../ripple-effect)
@@ -373,6 +377,7 @@ export default defineComponent({
 ```mermaid
 graph TD;
   ion-button --> ion-ripple-effect
+  ion-datetime --> ion-button
   style ion-button fill:#f9f,stroke:#333,stroke-width:4px
 ```
 

@@ -1,6 +1,6 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-import { dragElementBy, generateE2EUrl, listenForEvent, waitForFunctionTestContext } from '../../../utils/test/utils';
+import { dragElementBy, generateE2EUrl, listenForEvent, waitForFunctionTestContext } from '@utils/test';
 
 export const testPickerColumn = async (
   type: string,
@@ -18,7 +18,7 @@ export const testPickerColumn = async (
 
     const openButton = await page.find(selector);
     await openButton.click();
-    await page.waitFor(250);
+    await page.waitForTimeout(250);
 
     screenshotCompares.push(await page.compareScreenshot());
 

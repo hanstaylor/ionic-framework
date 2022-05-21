@@ -1,7 +1,7 @@
 import * as pd from '@stencil/core/dist/testing/puppeteer/puppeteer-declarations';
 import { newE2EPage } from '@stencil/core/testing';
 
-import { getElementProperty, queryDeep } from '../../../../utils/test/utils';
+import { getElementProperty, queryDeep } from '@utils/test';
 import { moveReorderItem } from '../test.utils';
 
 test('reorder: interactive', async () => {
@@ -54,7 +54,7 @@ test('reorder: interactive', async () => {
 const moveItem = async (id: string, page: pd.E2EPage, direction: 'up' | 'down' = 'up', numberOfSpaces = 1, ...parentSelectors: string[]) => {
   try {
     await moveReorderItem(`#${id}`, page, direction, numberOfSpaces, ...parentSelectors);
-    await page.waitFor(50);
+    await page.waitForTimeout(50);
   } catch (err) {
     throw err;
   }

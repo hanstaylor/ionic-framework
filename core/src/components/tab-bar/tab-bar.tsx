@@ -1,4 +1,4 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Listen, Prop, State, Watch, h } from '@stencil/core';
+import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Prop, State, Watch, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
 import { Color, TabBarChangedEventDetail } from '../../interface';
@@ -16,6 +16,8 @@ import { createColorClasses } from '../../utils/theme';
   shadow: true
 })
 export class TabBar implements ComponentInterface {
+  private keyboardWillShowHandler?: () => void;
+  private keyboardWillHideHandler?: () => void;
 
   @Element() el!: HTMLElement;
 
@@ -26,7 +28,7 @@ export class TabBar implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * Whether to hide the tabs when keyboard is summoned
@@ -56,9 +58,8 @@ export class TabBar implements ComponentInterface {
   /** @internal */
   @Event() ionTabBarChanged!: EventEmitter<TabBarChangedEventDetail>;
 
-  @Listen('keyboardWillHide', { target: 'window' })
-  protected onKeyboardWillHide() {
-    setTimeout(() => this.keyboardVisible = false, 50);
+  componentWillLoad() {
+    this.selectedTabChanged();
   }
 
   @Listen('keyboardWillShow', { target: 'window' })
@@ -68,8 +69,13 @@ export class TabBar implements ComponentInterface {
     }
   }
 
-  componentWillLoad() {
-    this.selectedTabChanged();
+  disconnectedCallback() {
+    if (typeof (window as any) !== 'undefined') {
+      window.removeEventListener('keyboardWillShow', this.keyboardWillShowHandler!);
+      window.removeEventListener('keyboardWillHide', this.keyboardWillHideHandler!);
+
+      this.keyboardWillShowHandler = this.keyboardWillHideHandler = undefined;
+    }
   }
 
   render() {

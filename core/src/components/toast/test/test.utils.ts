@@ -1,6 +1,6 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-import { generateE2EUrl } from '../../../utils/test/utils';
+import { generateE2EUrl } from '@utils/test';
 
 export const testToast = async (
   type: string,
@@ -20,7 +20,7 @@ export const testToast = async (
     await button.waitForVisible();
     await button.click();
 
-    await page.waitFor(250);
+    await page.waitForTimeout(250);
 
     let toast = await page.find('ion-toast');
     await toast.waitForVisible();

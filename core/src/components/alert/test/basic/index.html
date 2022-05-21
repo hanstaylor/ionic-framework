@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html dir="ltr">
+<html lang="en" dir="ltr">
 
 <head>
   <meta charset="UTF-8">
@@ -42,6 +42,9 @@
         --min-width: 0;
         --max-width: 200px;
       }
+      #delete-button {
+        color: #eb445a;
+      }
     </style>
   </ion-app>
 
@@ -58,7 +61,10 @@
         header: 'Alert',
         subHeader: 'Subtitle',
         message: 'This is an alert message.',
-        buttons: ['OK']
+        buttons: ['OK'],
+        htmlAttributes: {
+          'data-testid': 'basic-alert'
+        }
       });
     }
 
@@ -79,6 +85,7 @@
           'Open Modal',
           {
             text: 'Delete',
+            id: 'delete-button',
             role: 'destructive',
           },
           'Cancel',
@@ -185,6 +192,7 @@
             text: 'Cancel',
             role: 'cancel',
             cssClass: 'secondary',
+            id: 'cancel-id',
             handler: () => {
               console.log('Confirm Cancel')
             }

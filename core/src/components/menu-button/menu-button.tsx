@@ -1,9 +1,11 @@
 import { Component, ComponentInterface, Element, Host, Listen, Prop, State, h } from '@stencil/core';
+import { menuOutline, menuSharp } from 'ionicons/icons';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
 import { Color } from '../../interface';
 import { ButtonInterface } from '../../utils/element-interface';
+import { Attributes, inheritAttributes } from '../../utils/helpers';
 import { menuController } from '../../utils/menu-controller';
 import { createColorClasses, hostContext } from '../../utils/theme';
 import { updateVisibility } from '../menu-toggle/menu-toggle-util';
@@ -23,6 +25,8 @@ import { updateVisibility } from '../menu-toggle/menu-toggle-util';
   shadow: true
 })
 export class MenuButton implements ComponentInterface, ButtonInterface {
+  private inheritedAttributes: Attributes = {};
+
   @Element() el!: HTMLIonSegmentElement;
 
   @State() visible = false;
@@ -32,7 +36,7 @@ export class MenuButton implements ComponentInterface, ButtonInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If `true`, the user cannot interact with the menu button.
@@ -54,6 +58,10 @@ export class MenuButton implements ComponentInterface, ButtonInterface {
    */
   @Prop() type: 'submit' | 'reset' | 'button' = 'button';
 
+  componentWillLoad() {
+    this.inheritedAttributes = inheritAttributes(this.el, ['aria-label']);
+  }
+
   componentDidLoad() {
     this.visibilityChanged();
   }
@@ -69,14 +77,16 @@ export class MenuButton implements ComponentInterface, ButtonInterface {
   }
 
   render() {
-    const { color, disabled } = this;
+    const { color, disabled, inheritedAttributes } = this;
     const mode = getIonMode(this);
-    const menuIcon = config.get('menuIcon', mode === 'ios' ? 'menu-outline' : 'menu-sharp');
+    const menuIcon = config.get('menuIcon', mode === 'ios' ? menuOutline : menuSharp);
     const hidden = this.autoHide && !this.visible;
 
     const attrs = {
       type: this.type
     };
+
+    const ariaLabel = inheritedAttributes['aria-label'] || 'menu';
 
     return (
       <Host
@@ -99,7 +109,7 @@ export class MenuButton implements ComponentInterface, ButtonInterface {
           disabled={disabled}
           class="button-native"
           part="native"
-          aria-label="menu"
+          aria-label={ariaLabel}
         >
           <span class="button-inner">
             <slot>

@@ -1,6 +1,6 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-import { generateE2EUrl } from '../../../utils/test/utils';
+import { generateE2EUrl } from '@utils/test';
 
 export const testActionSheet = async (
   type: string,
@@ -71,7 +71,7 @@ export const testActionSheetAlert = async (
 
   const alert = await page.find('ion-alert');
   await alert.waitForVisible();
-  await page.waitFor(250);
+  await page.waitForTimeout(250);
 
   screenshotCompares.push(await page.compareScreenshot(`alert open`));
 

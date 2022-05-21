@@ -1,9 +1,11 @@
 import { Component, ComponentInterface, Element, Host, Prop, h } from '@stencil/core';
+import { arrowBackSharp, chevronBack } from 'ionicons/icons';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
 import { AnimationBuilder, Color } from '../../interface';
 import { ButtonInterface } from '../../utils/element-interface';
+import { Attributes, inheritAttributes } from '../../utils/helpers';
 import { createColorClasses, hostContext, openURL } from '../../utils/theme';
 
 /**
@@ -22,6 +24,7 @@ import { createColorClasses, hostContext, openURL } from '../../utils/theme';
   shadow: true
 })
 export class BackButton implements ComponentInterface, ButtonInterface {
+  private inheritedAttributes: Attributes = {};
 
   @Element() el!: HTMLElement;
 
@@ -30,7 +33,7 @@ export class BackButton implements ComponentInterface, ButtonInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * The url to navigate back to by default when there is no history.
@@ -43,7 +46,8 @@ export class BackButton implements ComponentInterface, ButtonInterface {
   @Prop({ reflect: true }) disabled = false;
 
   /**
-   * The icon name to use for the back button.
+   * The built-in named SVG icon name or the exact `src` of an SVG file
+   * to use for the back button.
    */
   @Prop() icon?: string | null;
 
@@ -64,6 +68,8 @@ export class BackButton implements ComponentInterface, ButtonInterface {
   @Prop() routerAnimation: AnimationBuilder | undefined;
 
   componentWillLoad() {
+    this.inheritedAttributes = inheritAttributes(this.el, ['aria-label']);
+
     if (this.defaultHref === undefined) {
       this.defaultHref = config.get('backButtonDefaultHref');
     }
@@ -78,11 +84,11 @@ export class BackButton implements ComponentInterface, ButtonInterface {
 
     if (getIonMode(this) === 'ios') {
       // default ios back button icon
-      return config.get('backButtonIcon', 'chevron-back');
+      return config.get('backButtonIcon', chevronBack);
     }
 
     // default md back button icon
-    return config.get('backButtonIcon', 'arrow-back-sharp');
+    return config.get('backButtonIcon', arrowBackSharp);
   }
 
   get backButtonText() {
@@ -115,9 +121,10 @@ export class BackButton implements ComponentInterface, ButtonInterface {
   }
 
   render() {
-    const { color, defaultHref, disabled, type, hasIconOnly, backButtonIcon, backButtonText } = this;
+    const { color, defaultHref, disabled, type, hasIconOnly, backButtonIcon, backButtonText, icon, inheritedAttributes } = this;
     const showBackButton = defaultHref !== undefined;
     const mode = getIonMode(this);
+    const ariaLabel = inheritedAttributes['aria-label'] || backButtonText || 'back';
 
     return (
       <Host
@@ -139,10 +146,10 @@ export class BackButton implements ComponentInterface, ButtonInterface {
           disabled={disabled}
           class="button-native"
           part="native"
-          aria-label={backButtonText || 'back'}
+          aria-label={ariaLabel}
         >
           <span class="button-inner">
-            {backButtonIcon && <ion-icon part="icon" icon={backButtonIcon} aria-hidden="true" lazy={false}></ion-icon>}
+            {backButtonIcon && <ion-icon part="icon" icon={backButtonIcon} aria-hidden="true" lazy={false} flip-rtl={icon === undefined}></ion-icon>}
             {backButtonText && <span part="text" aria-hidden="true" class="button-text">{backButtonText}</span>}
           </span>
           {mode === 'md' && <ion-ripple-effect type={this.rippleType}></ion-ripple-effect>}

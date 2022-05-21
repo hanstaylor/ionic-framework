@@ -2,7 +2,7 @@ import { Build, Component, ComponentInterface, Element, Event, EventEmitter, Hos
 
 import { getIonMode } from '../../global/ionic-global';
 import { AutocompleteTypes, Color, InputChangeEventDetail, StyleEventDetail, TextFieldTypes } from '../../interface';
-import { debounceEvent, findItemLabel } from '../../utils/helpers';
+import { Attributes, debounceEvent, findItemLabel, inheritAttributes } from '../../utils/helpers';
 import { createColorClasses } from '../../utils/theme';
 
 /**
@@ -21,7 +21,8 @@ export class Input implements ComponentInterface {
   private nativeInput?: HTMLInputElement;
   private inputId = `ion-input-${inputIds++}`;
   private didBlurAfterEdit = false;
-  private tabindex?: string | number;
+  private inheritedAttributes: Attributes = {};
+  private isComposing = false;
 
   /**
    * This is required for a WebKit bug which requires us to
@@ -42,7 +43,7 @@ export class Input implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If the value of the type attribute is `"file"`, then this attribute will indicate the types of files that the server accepts, otherwise it will be ignored. The value must be a comma-separated list of unique content type specifiers.
@@ -51,6 +52,7 @@ export class Input implements ComponentInterface {
 
   /**
    * Indicates whether and how the text value should be automatically capitalized as it is entered/edited by the user.
+   * Available options: `"off"`, `"none"`, `"on"`, `"sentences"`, `"words"`, `"characters"`.
    */
   @Prop() autocapitalize = 'off';
 
@@ -80,7 +82,7 @@ export class Input implements ComponentInterface {
   @Prop() clearOnEdit?: boolean;
 
   /**
-   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke.
+   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke. This also impacts form bindings such as `ngModel` or `v-model`.
    */
   @Prop() debounce = 0;
 
@@ -116,7 +118,7 @@ export class Input implements ComponentInterface {
   /**
    * The maximum value, which must not be less than its minimum (min attribute) value.
    */
-  @Prop() max?: string;
+  @Prop() max?: string | number;
 
   /**
    * If the value of the type attribute is `text`, `email`, `search`, `password`, `tel`, or `url`, this attribute specifies the maximum number of characters that the user can enter.
@@ -126,7 +128,7 @@ export class Input implements ComponentInterface {
   /**
    * The minimum value, which must not be greater than its maximum (max attribute) value.
    */
-  @Prop() min?: string;
+  @Prop() min?: string | number;
 
   /**
    * If the value of the type attribute is `text`, `email`, `search`, `password`, `tel`, or `url`, this attribute specifies the minimum number of characters that the user can enter.
@@ -150,8 +152,10 @@ export class Input implements ComponentInterface {
 
   /**
    * Instructional text that shows before the input has a value.
+   * This property applies only when the `type` property is set to `"email"`,
+   * `"number"`, `"password"`, `"search"`, `"tel"`, `"text"`, or `"url"`, otherwise it is ignored.
    */
-  @Prop() placeholder?: string | null;
+  @Prop() placeholder?: string;
 
   /**
    * If `true`, the user cannot modify the value.
@@ -190,18 +194,9 @@ export class Input implements ComponentInterface {
   @Prop({ mutable: true }) value?: string | number | null = '';
 
   /**
-   * Update the native input element when the value changes
-   */
-  @Watch('value')
-  protected valueChanged() {
-    this.emitStyle();
-    this.ionChange.emit({ value: this.value == null ? this.value : this.value.toString() });
-  }
-
-  /**
    * Emitted when a keyboard input occurred.
    */
-  @Event() ionInput!: EventEmitter<KeyboardEvent>;
+  @Event() ionInput!: EventEmitter<InputEvent>;
 
   /**
    * Emitted when the value has changed.
@@ -224,15 +219,38 @@ export class Input implements ComponentInterface {
    */
   @Event() ionStyle!: EventEmitter<StyleEventDetail>;
 
-  componentWillLoad() {
-    // If the ion-input has a tabindex attribute we get the value
-    // and pass it down to the native input, then remove it from the
-    // ion-input to avoid causing tabbing twice on the same element
-    if (this.el.hasAttribute('tabindex')) {
-      const tabindex = this.el.getAttribute('tabindex');
-      this.tabindex = tabindex !== null ? tabindex : undefined;
-      this.el.removeAttribute('tabindex');
+  /**
+   * Update the item classes when the placeholder changes
+   */
+  @Watch('placeholder')
+  protected placeholderChanged() {
+    this.emitStyle();
+  }
+
+  /**
+   * Update the native input element when the value changes
+   */
+  @Watch('value')
+  protected valueChanged() {
+    const nativeInput = this.nativeInput;
+    const value = this.getValue();
+    if (nativeInput && nativeInput.value !== value && !this.isComposing) {
+      /**
+       * Assigning the native input's value on attribute
+       * value change, allows `ionInput` implementations
+       * to override the control's value.
+       *
+       * Used for patterns such as input trimming (removing whitespace),
+       * or input masking.
+       */
+      nativeInput.value = value;
     }
+    this.emitStyle();
+    this.ionChange.emit({ value: this.value == null ? this.value : this.value.toString() });
+  }
+
+  componentWillLoad() {
+    this.inheritedAttributes = inheritAttributes(this.el, ['aria-label', 'tabindex', 'title']);
   }
 
   connectedCallback() {
@@ -245,11 +263,26 @@ export class Input implements ComponentInterface {
     }
   }
 
+  componentDidLoad() {
+    const nativeInput = this.nativeInput;
+    if (nativeInput) {
+      // TODO: FW-729 Update to JSX bindings when Stencil resolves bug with:
+      // https://github.com/ionic-team/stencil/issues/3235
+      nativeInput.addEventListener('compositionstart', this.onCompositionStart);
+      nativeInput.addEventListener('compositionend', this.onCompositionEnd);
+    }
+  }
+
   disconnectedCallback() {
     if (Build.isBrowser) {
       document.dispatchEvent(new CustomEvent('ionInputDidUnload', {
         detail: this.el
       }));
+    }
+    const nativeInput = this.nativeInput;
+    if (nativeInput) {
+      nativeInput.removeEventListener('compositionstart', this.onCompositionStart);
+      nativeInput.removeEventListener('compositionEnd', this.onCompositionEnd);
     }
   }
 
@@ -300,7 +333,7 @@ export class Input implements ComponentInterface {
     this.ionStyle.emit({
       'interactive': true,
       'input': true,
-      'has-placeholder': this.placeholder != null,
+      'has-placeholder': this.placeholder !== undefined,
       'has-value': this.hasValue(),
       'has-focus': this.hasFocus,
       'interactive-disabled': this.disabled,
@@ -312,7 +345,7 @@ export class Input implements ComponentInterface {
     if (input) {
       this.value = input.value || '';
     }
-    this.ionInput.emit(ev as KeyboardEvent);
+    this.ionInput.emit(ev as InputEvent);
   }
 
   private onBlur = (ev: FocusEvent) => {
@@ -347,6 +380,14 @@ export class Input implements ComponentInterface {
       // Reset the flag
       this.didBlurAfterEdit = false;
     }
+  }
+
+  private onCompositionStart = () => {
+    this.isComposing = true;
+  }
+
+  private onCompositionEnd = () => {
+    this.isComposing = false;
   }
 
   private clearTextOnEnter = (ev: KeyboardEvent) => {
@@ -406,7 +447,7 @@ export class Input implements ComponentInterface {
         <input
           class="native-input"
           ref={input => this.nativeInput = input}
-          aria-labelledby={labelId}
+          aria-labelledby={label ? labelId : null}
           disabled={this.disabled}
           accept={this.accept}
           autoCapitalize={this.autocapitalize}
@@ -428,13 +469,13 @@ export class Input implements ComponentInterface {
           spellcheck={this.spellcheck}
           step={this.step}
           size={this.size}
-          tabindex={this.tabindex}
           type={this.type}
           value={value}
           onInput={this.onInput}
           onBlur={this.onBlur}
           onFocus={this.onFocus}
           onKeyDown={this.onKeydown}
+          {...this.inheritedAttributes}
         />
         {(this.clearInput && !this.readonly && !this.disabled) && <button
           aria-label="reset"

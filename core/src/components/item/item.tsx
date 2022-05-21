@@ -1,10 +1,12 @@
 import { Component, ComponentInterface, Element, Host, Listen, Prop, State, forceUpdate, h } from '@stencil/core';
+import { chevronForward } from 'ionicons/icons';
 
 import { getIonMode } from '../../global/ionic-global';
 import { AnimationBuilder, Color, CssClassMap, RouterDirection, StyleEventDetail } from '../../interface';
 import { AnchorInterface, ButtonInterface } from '../../utils/element-interface';
 import { raf } from '../../utils/helpers';
 import { createColorClasses, hostContext, openURL } from '../../utils/theme';
+import { InputChangeEventDetail } from '../input/input-interface';
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -12,6 +14,8 @@ import { createColorClasses, hostContext, openURL } from '../../utils/theme';
  * @slot - Content is placed between the named slots if provided without a slot.
  * @slot start - Content is placed to the left of the item text in LTR, and to the right in RTL.
  * @slot end - Content is placed to the right of the item text in LTR, and to the left in RTL.
+ * @slot helper - Content is placed under the item and displayed when no error is detected.
+ * @slot error - Content is placed under the item and displayed when an error is detected.
  *
  * @part native - The native HTML button, anchor or div element that wraps all child elements.
  * @part detail-icon - The chevron icon for the item. Only applies when `detail="true"`.
@@ -30,17 +34,19 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
 
   private labelColorStyles = {};
   private itemStyles = new Map<string, CssClassMap>();
+  private clickListener?: (ev: Event) => void;
 
   @Element() el!: HTMLIonItemElement;
 
   @State() multipleInputs = false;
+  @State() focusable = true;
 
   /**
    * The color to use from your application's color palette.
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If `true`, a button tag will be rendered and the item will be tappable.
@@ -56,7 +62,7 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
   /**
    * The icon to use when `detail` is set to `true`.
    */
-  @Prop() detailIcon = 'chevron-forward';
+  @Prop() detailIcon = chevronForward;
 
   /**
    * If `true`, the user cannot interact with the item.
@@ -71,6 +77,17 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
    */
   @Prop() download: string | undefined;
 
+  /**
+   * The fill for the item. If `'solid'` the item will have a background. If
+   * `'outline'` the item will be transparent with a border. Only available in `md` mode.
+   */
+  @Prop() fill?: 'outline' | 'solid';
+
+  /**
+   * The shape of the item. If "round" it will have increased
+   * border radius.
+   */
+  @Prop() shape?: 'round';
   /**
    * Contains a URL or a URL fragment that the hyperlink points to.
    * If this property is set, an anchor tag will be rendered.
@@ -87,6 +104,11 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
    * How the bottom border should be displayed on the item.
    */
   @Prop() lines?: 'full' | 'inset' | 'none';
+
+  /**
+   * If `true`, a character counter will display the ratio of characters used and the total character limit. Only applies when the `maxlength` property is set on the inner `ion-input` or `ion-textarea`.
+   */
+  @Prop() counter = false;
 
   /**
    * When using a router, it specifies the transition animation when navigating to
@@ -111,6 +133,15 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
    * The type of the button. Only used when an `onclick` or `button` property is present.
    */
   @Prop() type: 'submit' | 'reset' | 'button' = 'button';
+
+  @State() counterString: string | null | undefined;
+
+  @Listen('ionChange')
+  handleIonChange(ev: CustomEvent<InputChangeEventDetail>) {
+    if (this.counter && ev.target === this.getFirstInput()) {
+      this.updateCounterOutput(ev.target as HTMLIonInputElement | HTMLIonTextareaElement);
+    }
+  }
 
   @Listen('ionColor')
   labelColorChanged(ev: CustomEvent<string>) {
@@ -152,7 +183,44 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
     }
   }
 
+  connectedCallback() {
+    if (this.counter) {
+      this.updateCounterOutput(this.getFirstInput());
+    }
+
+    this.hasStartEl();
+  }
+
+  componentDidUpdate() {
+    // Do not use @Listen here to avoid making all items
+    // appear as clickable to screen readers
+    // https://github.com/ionic-team/ionic-framework/issues/22011
+    const input = this.getFirstInput();
+    if (input && !this.clickListener) {
+      this.clickListener = (ev: Event) => this.delegateFocus(ev, input);
+      this.el.addEventListener('click', this.clickListener);
+    }
+  }
+
+  disconnectedCallback() {
+    const input = this.getFirstInput();
+    if (input && this.clickListener) {
+      this.el.removeEventListener('click', this.clickListener);
+      this.clickListener = undefined;
+    }
+  }
+
   componentDidLoad() {
+    raf(() => {
+      this.setMultipleInputs();
+      this.focusable = this.isFocusable();
+    });
+  }
+
+  // If the item contains multiple clickable elements and/or inputs, then the item
+  // should not have a clickable input cover over the entire item to prevent
+  // interfering with their individual click events
+  private setMultipleInputs() {
     // The following elements have a clickable cover that is relative to the entire item
     const covers = this.el.querySelectorAll('ion-checkbox, ion-datetime, ion-select, ion-radio');
 
@@ -190,6 +258,11 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
     return (this.isClickable() || this.hasCover());
   }
 
+  private isFocusable(): boolean {
+    const focusableChild = this.el.querySelector('.ion-focusable');
+    return (this.canActivate() || focusableChild !== null);
+  }
+
   private getFirstInput(): HTMLIonInputElement | HTMLIonTextareaElement {
     const inputs = this.el.querySelectorAll('ion-input, ion-textarea') as NodeListOf<HTMLIonInputElement | HTMLIonTextareaElement>;
     return inputs[0];
@@ -199,22 +272,20 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
   // clicking on the left padding of an item is not focusing the input
   // but is opening the keyboard. It will no longer be needed with
   // iOS 14.
-  @Listen('click')
-  delegateFocus(ev: Event) {
+  private delegateFocus(ev: Event, input: HTMLIonInputElement | HTMLIonTextareaElement) {
     const clickedItem = (ev.target as HTMLElement).tagName === 'ION-ITEM';
-    const input = this.getFirstInput();
     let firstActive = false;
 
     // If the first input is the same as the active element we need
     // to focus the first input again, but if the active element
     // is another input inside of the item we shouldn't switch focus
-    if (input && document.activeElement) {
+    if (document.activeElement) {
       firstActive = input.querySelector('input, textarea') === document.activeElement;
     }
 
     // Only focus the first input if we clicked on an ion-item
     // and the first input exists
-    if (clickedItem && input && firstActive) {
+    if (clickedItem && (firstActive || !this.multipleInputs)) {
       input.fireFocusEvents = false;
       input.setBlur();
       input.setFocus();
@@ -224,9 +295,23 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
     }
   }
 
+  private updateCounterOutput(inputEl: HTMLIonInputElement | HTMLIonTextareaElement) {
+    if (this.counter && !this.multipleInputs && inputEl?.maxlength !== undefined) {
+      const length = inputEl?.value?.toString().length ?? '0';
+      this.counterString = `${length} / ${inputEl.maxlength}`;
+    }
+  }
+
+  private hasStartEl() {
+    const startEl = this.el.querySelector('[slot="start"]');
+    if (startEl !== null) {
+      this.el.classList.add('item-has-start-slot');
+    }
+  }
+
   render() {
-    const { detail, detailIcon, download, labelColorStyles, lines, disabled, href, rel, target, routerAnimation, routerDirection } = this;
-    const childStyles = {};
+    const { counterString, detail, detailIcon, download, fill, labelColorStyles, lines, disabled, href, rel, shape, target, routerAnimation, routerDirection } = this;
+    const childStyles = {} as any;
     const mode = getIonMode(this);
     const clickable = this.isClickable();
     const canActivate = this.canActivate();
@@ -239,14 +324,20 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
         rel,
         target
       };
+    // Only set onClick if the item is clickable to prevent screen
+    // readers from reading all items as clickable
+    const clickFn = clickable ? {
+      onClick: (ev: Event) => { openURL(href, ev, routerDirection, routerAnimation); }
+    } : {};
     const showDetail = detail !== undefined ? detail : mode === 'ios' && clickable;
     this.itemStyles.forEach(value => {
       Object.assign(childStyles, value);
     });
-
+    const ariaDisabled = (disabled || childStyles['item-interactive-disabled']) ? 'true' : null;
+    const fillValue = fill || 'none';
     return (
       <Host
-        aria-disabled={disabled ? 'true' : null}
+        aria-disabled={ariaDisabled}
         class={{
           ...childStyles,
           ...labelColorStyles,
@@ -254,33 +345,41 @@ export class Item implements ComponentInterface, AnchorInterface, ButtonInterfac
             'item': true,
             [mode]: true,
             [`item-lines-${lines}`]: lines !== undefined,
+            [`item-fill-${fillValue}`]: true,
+            [`item-shape-${shape}`]: shape !== undefined,
             'item-disabled': disabled,
             'in-list': hostContext('ion-list', this.el),
             'item-multiple-inputs': this.multipleInputs,
             'ion-activatable': canActivate,
-            'ion-focusable': true,
+            'ion-focusable': this.focusable,
+            'item-rtl': document.dir === 'rtl'
           })
         }}
       >
-          <TagType
-            {...attrs}
-            class="item-native"
-            part="native"
-            disabled={disabled}
-            onClick={(ev: Event) => openURL(href, ev, routerDirection, routerAnimation)}
-          >
-            <slot name="start"></slot>
-            <div class="item-inner">
-              <div class="input-wrapper">
-                <slot></slot>
-              </div>
-              <slot name="end"></slot>
-              {showDetail && <ion-icon icon={detailIcon} lazy={false} class="item-detail-icon" part="detail-icon"></ion-icon>}
-              <div class="item-inner-highlight"></div>
+        <TagType
+          {...attrs}
+          class="item-native"
+          part="native"
+          disabled={disabled}
+          {...clickFn}
+        >
+          <slot name="start"></slot>
+          <div class="item-inner">
+            <div class="input-wrapper">
+              <slot></slot>
             </div>
-            {canActivate && mode === 'md' && <ion-ripple-effect></ion-ripple-effect>}
-          </TagType>
+            <slot name="end"></slot>
+            {showDetail && <ion-icon icon={detailIcon} lazy={false} class="item-detail-icon" part="detail-icon" aria-hidden="true" flip-rtl={detailIcon === chevronForward}></ion-icon>}
+            <div class="item-inner-highlight"></div>
+          </div>
+          {canActivate && mode === 'md' && <ion-ripple-effect></ion-ripple-effect>}
           <div class="item-highlight"></div>
+        </TagType>
+        <div class="item-bottom">
+          <slot name="error"></slot>
+          <slot name="helper"></slot>
+          {counterString && <ion-note class="item-counter">{counterString}</ion-note>}
+        </div>
       </Host>
     );
   }

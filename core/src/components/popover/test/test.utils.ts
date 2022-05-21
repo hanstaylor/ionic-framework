@@ -1,10 +1,11 @@
 import { newE2EPage } from '@stencil/core/testing';
 
-import { generateE2EUrl } from '../../../utils/test/utils';
+import { generateE2EUrl } from '@utils/test';
 
 export const testPopover = async (
   type: string,
   selector: string,
+  expectUnmount = true,
   rtl = false
 ) => {
   try {
@@ -29,8 +30,10 @@ export const testPopover = async (
 
     screenshotCompares.push(await page.compareScreenshot('dismiss'));
 
-    popover = await page.find('ion-popover');
-    expect(popover).toBeNull();
+    if (expectUnmount) {
+      popover = await page.find('ion-popover');
+      expect(popover).toBeNull();
+    }
 
     for (const screenshotCompare of screenshotCompares) {
       expect(screenshotCompare).toMatchScreenshot();

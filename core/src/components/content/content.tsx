@@ -1,9 +1,10 @@
 import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Listen, Method, Prop, forceUpdate, h, readTask } from '@stencil/core';
 
-import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
 import { Color, ScrollBaseDetail, ScrollDetail } from '../../interface';
+import { componentOnReady } from '../../utils/helpers';
 import { isPlatform } from '../../utils/platform';
+import { isRTL } from '../../utils/rtl';
 import { createColorClasses, hostContext } from '../../utils/theme';
 
 /**
@@ -26,7 +27,8 @@ export class Content implements ComponentInterface {
   private queued = false;
   private cTop = -1;
   private cBottom = -1;
-  private scrollEl!: HTMLElement;
+  private scrollEl?: HTMLElement;
+  private isMainContent = true;
 
   // Detail is used in a hot loop in the scroll event, by allocating it here
   // V8 will be able to inline any read/write to it since it's a monomorphic class.
@@ -57,7 +59,7 @@ export class Content implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * If `true`, the content will scroll behind the headers
@@ -105,6 +107,10 @@ export class Content implements ComponentInterface {
    */
   @Event() ionScrollEnd!: EventEmitter<ScrollBaseDetail>;
 
+  connectedCallback() {
+    this.isMainContent = this.el.closest('ion-menu, ion-popover, ion-modal') === null;
+  }
+
   disconnectedCallback() {
     this.onScrollEnd();
   }
@@ -112,14 +118,6 @@ export class Content implements ComponentInterface {
   @Listen('appload', { target: 'window' })
   onAppLoad() {
     this.resize();
-  }
-
-  @Listen('click', { capture: true })
-  onClick(ev: Event) {
-    if (this.isScrolling) {
-      ev.preventDefault();
-      ev.stopPropagation();
-    }
   }
 
   private shouldForceOverscroll() {
@@ -164,7 +162,7 @@ export class Content implements ComponentInterface {
       readTask(ts => {
         this.queued = false;
         this.detail.event = ev;
-        updateScrollDetail(this.detail, this.scrollEl, ts, shouldStart);
+        updateScrollDetail(this.detail, this.scrollEl!, ts, shouldStart);
         this.ionScroll.emit(this.detail);
       });
     }
@@ -179,8 +177,16 @@ export class Content implements ComponentInterface {
    * and `scrollToPoint()` to scroll the content into a certain point.
    */
   @Method()
-  getScrollElement(): Promise<HTMLElement> {
-    return Promise.resolve(this.scrollEl);
+  async getScrollElement(): Promise<HTMLElement> {
+    /**
+     * If this gets called in certain early lifecycle hooks (ex: Vue onMounted),
+     * scrollEl won't be defined yet with the custom elements build, so wait for it to load in.
+     */
+    if (!this.scrollEl) {
+      await new Promise(resolve => componentOnReady(this.el, resolve));
+    }
+
+    return Promise.resolve(this.scrollEl!);
   }
 
   /**
@@ -199,8 +205,9 @@ export class Content implements ComponentInterface {
    * @param duration The amount of time to take scrolling to the bottom. Defaults to `0`.
    */
   @Method()
-  scrollToBottom(duration = 0): Promise<void> {
-    const y = this.scrollEl.scrollHeight - this.scrollEl.clientHeight;
+  async scrollToBottom(duration = 0): Promise<void> {
+    const scrollEl = await this.getScrollElement();
+    const y = scrollEl!.scrollHeight - scrollEl!.clientHeight;
     return this.scrollToPoint(undefined, y, duration);
   }
 
@@ -212,8 +219,9 @@ export class Content implements ComponentInterface {
    * @param duration The amount of time to take scrolling by that amount.
    */
   @Method()
-  scrollByPoint(x: number, y: number, duration: number): Promise<void> {
-    return this.scrollToPoint(x + this.scrollEl.scrollLeft, y + this.scrollEl.scrollTop, duration);
+  async scrollByPoint(x: number, y: number, duration: number): Promise<void> {
+    const scrollEl = await this.getScrollElement();
+    return this.scrollToPoint(x + scrollEl!.scrollLeft, y + scrollEl!.scrollTop, duration);
   }
 
   /**
@@ -225,7 +233,7 @@ export class Content implements ComponentInterface {
    */
   @Method()
   async scrollToPoint(x: number | undefined | null, y: number | undefined | null, duration = 0): Promise<void> {
-    const el = this.scrollEl;
+    const el = await this.getScrollElement();
     if (duration < 32) {
       if (y != null) {
         el.scrollTop = y;
@@ -304,10 +312,12 @@ export class Content implements ComponentInterface {
   }
 
   render() {
-    const { scrollX, scrollY } = this;
+    const { isMainContent, scrollX, scrollY, el } = this;
+    const rtl = isRTL(el) ? 'rtl' : 'ltr';
     const mode = getIonMode(this);
     const forceOverscroll = this.shouldForceOverscroll();
-    const transitionShadow = (mode === 'ios' && config.getBoolean('experimentalTransitionShadow', true));
+    const transitionShadow = mode === 'ios';
+    const TagType = isMainContent ? 'main' : 'div' as any;
 
     this.resize();
 
@@ -317,6 +327,7 @@ export class Content implements ComponentInterface {
           [mode]: true,
           'content-sizing': hostContext('ion-popover', this.el),
           'overscroll': forceOverscroll,
+          [`content-${rtl}`]: true
         })}
         style={{
           '--offset-top': `${this.cTop}px`,
@@ -324,19 +335,19 @@ export class Content implements ComponentInterface {
         }}
       >
         <div id="background-content" part="background"></div>
-        <main
+        <TagType
           class={{
             'inner-scroll': true,
             'scroll-x': scrollX,
             'scroll-y': scrollY,
             'overscroll': (scrollX || scrollY) && forceOverscroll
           }}
-          ref={el => this.scrollEl = el!}
-          onScroll={(this.scrollEvents) ? ev => this.onScroll(ev) : undefined}
+          ref={(scrollEl: HTMLElement) => this.scrollEl = scrollEl!}
+          onScroll={(this.scrollEvents) ? (ev: UIEvent) => this.onScroll(ev) : undefined}
           part="scroll"
         >
           <slot></slot>
-        </main>
+        </TagType>
 
         {transitionShadow ? (
           <div class="transition-effect">
@@ -368,10 +379,17 @@ const getPageElement = (el: HTMLElement) => {
   if (tabs) {
     return tabs;
   }
-  const page = el.closest('ion-app,ion-page,.ion-page,page-inner');
+
+  /**
+   * If we're in a popover, we need to use its wrapper so we can account for space
+   * between the popover and the edges of the screen. But if the popover contains
+   * its own page element, we should use that instead.
+   */
+  const page = el.closest('ion-app, ion-page, .ion-page, page-inner, .popover-content');
   if (page) {
     return page;
   }
+
   return getParentElement(el);
 };
 

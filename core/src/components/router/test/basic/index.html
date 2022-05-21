@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html dir="ltr">
+<html lang="en" dir="ltr">
 
 <head>
   <meta charset="UTF-8">
@@ -57,6 +57,8 @@
           <p><a href='#/two/three/hello'>Go to page 3 (hello)</a></p>
           <p><a href='#/two/second-page'>Go to page 2</a></p>
           <p><a href='#/two/'>Go to page 1</a></p>
+          <ion-button id="btn-rel" href="./relative?param=1">Page 3 (relative)</ion-button>
+          <ion-button id="btn-abs" href="/two/three/absolute">Page 3 (absolute)</ion-button>
         </ion-content>`;
       }
     }
@@ -70,7 +72,7 @@
           </ion-toolbar>
         </ion-header>
         <ion-content>
-          this is the first pahe
+          this is the first page
         </ion-content>`;
       }
     }
@@ -211,6 +213,7 @@
         <ion-route url="/four" component="tab-four"> </ion-route>
       </ion-route>
 
+      <ion-route-redirect from="/redirect-to-three" to="/three?has_query_string=true"></ion-route-redirect>
     </ion-router>
 
     <ion-nav></ion-nav>

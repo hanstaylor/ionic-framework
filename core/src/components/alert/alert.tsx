@@ -8,6 +8,7 @@ import { BACKDROP, dismiss, eventMethod, isCancel, prepareOverlay, present, safe
 import { IonicSafeString, sanitizeDOMString } from '../../utils/sanitization';
 import { getClassMap } from '../../utils/theme';
 
+import { AlertAttributes } from './alert-interface';
 import { iosEnterAnimation } from './animations/ios.enter';
 import { iosLeaveAnimation } from './animations/ios.leave';
 import { mdEnterAnimation } from './animations/md.enter';
@@ -111,6 +112,11 @@ export class Alert implements ComponentInterface, OverlayInterface {
   @Prop() animated = true;
 
   /**
+   * Additional attributes to pass to the alert.
+   */
+  @Prop() htmlAttributes?: AlertAttributes;
+
+  /**
    * Emitted after the alert has presented.
    */
   @Event({ eventName: 'ionAlertDidPresent' }) didPresent!: EventEmitter<void>;
@@ -139,8 +145,7 @@ export class Alert implements ComponentInterface, OverlayInterface {
     if (
       !inputTypes.has('radio')
       || (ev.target && !this.el.contains(ev.target))
-      || ev.target.classList.contains('alert-button'))
-    {
+      || ev.target.classList.contains('alert-button')) {
       return;
     }
 
@@ -159,7 +164,7 @@ export class Alert implements ComponentInterface, OverlayInterface {
 
     // If hitting arrow down or arrow right, move to the next radio
     // If we're on the last radio, move to the first radio
-    if (['ArrowDown', 'ArrowRight'].includes(ev.key)) {
+    if (['ArrowDown', 'ArrowRight'].includes(ev.code)) {
       nextEl = (index === radios.length - 1)
         ? radios[0]
         : radios[index + 1];
@@ -167,10 +172,10 @@ export class Alert implements ComponentInterface, OverlayInterface {
 
     // If hitting arrow up or arrow left, move to the previous radio
     // If we're on the first radio, move to the last radio
-    if (['ArrowUp', 'ArrowLeft'].includes(ev.key)) {
+    if (['ArrowUp', 'ArrowLeft'].includes(ev.code)) {
       nextEl = (index === 0)
         ? radios[radios.length - 1]
-        : radios[index - 1]
+        : radios[index - 1];
     }
 
     if (nextEl && radios.includes(nextEl)) {
@@ -374,22 +379,24 @@ export class Alert implements ComponentInterface, OverlayInterface {
     return values;
   }
 
-  private renderAlertInputs(labelledBy: string | undefined) {
+  private renderAlertInputs() {
     switch (this.inputType) {
-      case 'checkbox': return this.renderCheckbox(labelledBy);
-      case 'radio': return this.renderRadio(labelledBy);
-      default: return this.renderInput(labelledBy);
+      case 'checkbox': return this.renderCheckbox();
+      case 'radio': return this.renderRadio();
+      default: return this.renderInput();
     }
   }
 
-  private renderCheckbox(labelledby: string | undefined) {
+  private renderCheckbox() {
     const inputs = this.processedInputs;
     const mode = getIonMode(this);
+
     if (inputs.length === 0) {
       return null;
     }
+
     return (
-      <div class="alert-checkbox-group" aria-labelledby={labelledby}>
+      <div class="alert-checkbox-group">
         { inputs.map(i => (
           <button
             type="button"
@@ -423,13 +430,15 @@ export class Alert implements ComponentInterface, OverlayInterface {
     );
   }
 
-  private renderRadio(labelledby: string | undefined) {
+  private renderRadio() {
     const inputs = this.processedInputs;
+
     if (inputs.length === 0) {
       return null;
     }
+
     return (
-      <div class="alert-radio-group" role="radiogroup" aria-labelledby={labelledby} aria-activedescendant={this.activeId}>
+      <div class="alert-radio-group" role="radiogroup" aria-activedescendant={this.activeId}>
         { inputs.map(i => (
           <button
             type="button"
@@ -460,13 +469,13 @@ export class Alert implements ComponentInterface, OverlayInterface {
     );
   }
 
-  private renderInput(labelledby: string | undefined) {
+  private renderInput() {
     const inputs = this.processedInputs;
     if (inputs.length === 0) {
       return null;
     }
     return (
-      <div class="alert-input-group" aria-labelledby={labelledby}>
+      <div class="alert-input-group">
         { inputs.map(i => {
           if (i.type === 'textarea') {
             return (
@@ -535,7 +544,7 @@ export class Alert implements ComponentInterface, OverlayInterface {
     return (
       <div class={alertButtonGroupClass}>
         {buttons.map(button =>
-          <button type="button" class={buttonClass(button)} tabIndex={0} onClick={() => this.buttonClick(button)}>
+          <button type="button" id={button.id} class={buttonClass(button)} tabIndex={0} onClick={() => this.buttonClick(button)}>
             <span class="alert-button-inner">
               {button.text}
             </span>
@@ -547,30 +556,26 @@ export class Alert implements ComponentInterface, OverlayInterface {
   }
 
   render() {
-    const { overlayIndex, header, subHeader } = this;
+    const { overlayIndex, header, subHeader, htmlAttributes } = this;
     const mode = getIonMode(this);
     const hdrId = `alert-${overlayIndex}-hdr`;
     const subHdrId = `alert-${overlayIndex}-sub-hdr`;
     const msgId = `alert-${overlayIndex}-msg`;
-
-    let labelledById: string | undefined;
-    if (header !== undefined) {
-      labelledById = hdrId;
-    } else if (subHeader !== undefined) {
-      labelledById = subHdrId;
-    }
+    const role = this.inputs.length > 0 || this.buttons.length > 0 ? 'alertdialog' : 'alert';
 
     return (
       <Host
-        role="dialog"
+        role={role}
         aria-modal="true"
         tabindex="-1"
+        {...htmlAttributes as any}
         style={{
           zIndex: `${20000 + overlayIndex}`,
         }}
         class={{
           ...getClassMap(this.cssClass),
           [mode]: true,
+          'overlay-hidden': true,
           'alert-translucent': this.translucent
         }}
         onIonAlertWillDismiss={this.dispatchCancelHandler}
@@ -590,7 +595,7 @@ export class Alert implements ComponentInterface, OverlayInterface {
 
           <div id={msgId} class="alert-message" innerHTML={sanitizeDOMString(this.message)}></div>
 
-          {this.renderAlertInputs(labelledById)}
+          {this.renderAlertInputs()}
           {this.renderAlertButtons()}
 
         </div>

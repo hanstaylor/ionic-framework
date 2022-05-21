@@ -2,7 +2,7 @@ import { Build, Component, ComponentInterface, Element, Event, EventEmitter, Hos
 
 import { getIonMode } from '../../global/ionic-global';
 import { Color, StyleEventDetail, TextareaChangeEventDetail } from '../../interface';
-import { debounceEvent, findItemLabel, raf } from '../../utils/helpers';
+import { Attributes, debounceEvent, findItemLabel, inheritAttributes, raf } from '../../utils/helpers';
 import { createColorClasses } from '../../utils/theme';
 
 /**
@@ -22,6 +22,7 @@ export class Textarea implements ComponentInterface {
   private inputId = `ion-textarea-${textareaIds++}`;
   private didBlurAfterEdit = false;
   private textareaWrapper?: HTMLElement;
+  private inheritedAttributes: Attributes = {};
 
   /**
    * This is required for a WebKit bug which requires us to
@@ -42,10 +43,11 @@ export class Textarea implements ComponentInterface {
    * Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`.
    * For more information on colors, see [theming](/docs/theming/basics).
    */
-  @Prop() color?: Color;
+  @Prop({ reflect: true }) color?: Color;
 
   /**
    * Indicates whether and how the text value should be automatically capitalized as it is entered/edited by the user.
+   * Available options: `"off"`, `"none"`, `"on"`, `"sentences"`, `"words"`, `"characters"`.
    */
   @Prop() autocapitalize = 'none';
 
@@ -60,7 +62,7 @@ export class Textarea implements ComponentInterface {
   @Prop({ mutable: true }) clearOnEdit = false;
 
   /**
-   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke.
+   * Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke. This also impacts form bindings such as `ngModel` or `v-model`.
    */
   @Prop() debounce = 0;
 
@@ -111,7 +113,7 @@ export class Textarea implements ComponentInterface {
   /**
    * Instructional text that shows before the input has a value.
    */
-  @Prop() placeholder?: string | null;
+  @Prop() placeholder?: string;
 
   /**
    * If `true`, the user cannot modify the value.
@@ -176,7 +178,7 @@ export class Textarea implements ComponentInterface {
   /**
    * Emitted when a keyboard input occurred.
    */
-  @Event() ionInput!: EventEmitter<KeyboardEvent>;
+  @Event() ionInput!: EventEmitter<InputEvent>;
 
   /**
    * Emitted when the styles change.
@@ -210,6 +212,10 @@ export class Textarea implements ComponentInterface {
         detail: this.el
       }));
     }
+  }
+
+  componentWillLoad() {
+    this.inheritedAttributes = inheritAttributes(this.el, ['title']);
   }
 
   componentDidLoad() {
@@ -266,7 +272,7 @@ export class Textarea implements ComponentInterface {
       'textarea': true,
       'input': true,
       'interactive-disabled': this.disabled,
-      'has-placeholder': this.placeholder != null,
+      'has-placeholder': this.placeholder !== undefined,
       'has-value': this.hasValue(),
       'has-focus': this.hasFocus
     });
@@ -311,7 +317,7 @@ export class Textarea implements ComponentInterface {
       this.value = this.nativeInput.value;
     }
     this.emitStyle();
-    this.ionInput.emit(ev as KeyboardEvent);
+    this.ionInput.emit(ev as InputEvent);
   }
 
   private onFocus = (ev: FocusEvent) => {
@@ -358,7 +364,7 @@ export class Textarea implements ComponentInterface {
         >
           <textarea
             class="native-textarea"
-            aria-labelledby={labelId}
+            aria-labelledby={label ? labelId : null}
             ref={el => this.nativeInput = el}
             autoCapitalize={this.autocapitalize}
             autoFocus={this.autofocus}
@@ -379,6 +385,7 @@ export class Textarea implements ComponentInterface {
             onBlur={this.onBlur}
             onFocus={this.onFocus}
             onKeyDown={this.onKeyDown}
+            {...this.inheritedAttributes}
           >
             {value}
           </textarea>

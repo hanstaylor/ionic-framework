@@ -6,7 +6,26 @@ Unlike the native textarea element, the Ionic textarea does not support loading 
 
 The textarea component accepts the [native textarea attributes](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/textarea) in addition to the Ionic properties.
 
+## Interfaces
 
+### TextareaChangeEventDetail
+
+```typescript
+interface TextareaChangeEventDetail {
+  value?: string | null;
+}
+```
+
+### TextareaCustomEvent
+
+While not required, this interface can be used in place of the `CustomEvent` interface for stronger typing with Ionic events emitted from this component.
+
+```typescript
+interface TextareaCustomEvent extends CustomEvent {
+  detail: TextareaChangeEventDetail;
+  target: HTMLIonTextareaElement;
+}
+```
 
 <!-- Auto Generated Below -->
 
@@ -253,11 +272,11 @@ export class TextareaExample {
 </template>
 
 <script>
-import { IonItem, IonLabe, IonTextarea } from '@ionic/vue';
+import { IonItem, IonLabel, IonTextarea } from '@ionic/vue';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  components: { IonItem, IonLabe, IonTextarea }
+  components: { IonItem, IonLabel, IonTextarea }
 });
 </script>
 ```
@@ -269,12 +288,12 @@ export default defineComponent({
 | Property         | Attribute        | Description                                                                                                                                                                                                                                                            | Type                                                                                               | Default        |
 | ---------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------- |
 | `autoGrow`       | `auto-grow`      | If `true`, the element height will increase based on the value.                                                                                                                                                                                                        | `boolean`                                                                                          | `false`        |
-| `autocapitalize` | `autocapitalize` | Indicates whether and how the text value should be automatically capitalized as it is entered/edited by the user.                                                                                                                                                      | `string`                                                                                           | `'none'`       |
+| `autocapitalize` | `autocapitalize` | Indicates whether and how the text value should be automatically capitalized as it is entered/edited by the user. Available options: `"off"`, `"none"`, `"on"`, `"sentences"`, `"words"`, `"characters"`.                                                              | `string`                                                                                           | `'none'`       |
 | `autofocus`      | `autofocus`      | This Boolean attribute lets you specify that a form control should have input focus when the page loads.                                                                                                                                                               | `boolean`                                                                                          | `false`        |
 | `clearOnEdit`    | `clear-on-edit`  | If `true`, the value will be cleared after focus upon edit. Defaults to `true` when `type` is `"password"`, `false` for all other types.                                                                                                                               | `boolean`                                                                                          | `false`        |
 | `color`          | `color`          | The color to use from your application's color palette. Default options are: `"primary"`, `"secondary"`, `"tertiary"`, `"success"`, `"warning"`, `"danger"`, `"light"`, `"medium"`, and `"dark"`. For more information on colors, see [theming](/docs/theming/basics). | `string \| undefined`                                                                              | `undefined`    |
 | `cols`           | `cols`           | The visible width of the text control, in average character widths. If it is specified, it must be a positive integer.                                                                                                                                                 | `number \| undefined`                                                                              | `undefined`    |
-| `debounce`       | `debounce`       | Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke.                                                                                                                                                                | `number`                                                                                           | `0`            |
+| `debounce`       | `debounce`       | Set the amount of time, in milliseconds, to wait to trigger the `ionChange` event after each keystroke. This also impacts form bindings such as `ngModel` or `v-model`.                                                                                                | `number`                                                                                           | `0`            |
 | `disabled`       | `disabled`       | If `true`, the user cannot interact with the textarea.                                                                                                                                                                                                                 | `boolean`                                                                                          | `false`        |
 | `enterkeyhint`   | `enterkeyhint`   | A hint to the browser for which enter key to display. Possible values: `"enter"`, `"done"`, `"go"`, `"next"`, `"previous"`, `"search"`, and `"send"`.                                                                                                                  | `"done" \| "enter" \| "go" \| "next" \| "previous" \| "search" \| "send" \| undefined`             | `undefined`    |
 | `inputmode`      | `inputmode`      | A hint to the browser for which keyboard to display. Possible values: `"none"`, `"text"`, `"tel"`, `"url"`, `"email"`, `"numeric"`, `"decimal"`, and `"search"`.                                                                                                       | `"decimal" \| "email" \| "none" \| "numeric" \| "search" \| "tel" \| "text" \| "url" \| undefined` | `undefined`    |
@@ -282,7 +301,7 @@ export default defineComponent({
 | `minlength`      | `minlength`      | If the value of the type attribute is `text`, `email`, `search`, `password`, `tel`, or `url`, this attribute specifies the minimum number of characters that the user can enter.                                                                                       | `number \| undefined`                                                                              | `undefined`    |
 | `mode`           | `mode`           | The mode determines which platform styles to use.                                                                                                                                                                                                                      | `"ios" \| "md"`                                                                                    | `undefined`    |
 | `name`           | `name`           | The name of the control, which is submitted with the form data.                                                                                                                                                                                                        | `string`                                                                                           | `this.inputId` |
-| `placeholder`    | `placeholder`    | Instructional text that shows before the input has a value.                                                                                                                                                                                                            | `null \| string \| undefined`                                                                      | `undefined`    |
+| `placeholder`    | `placeholder`    | Instructional text that shows before the input has a value.                                                                                                                                                                                                            | `string \| undefined`                                                                              | `undefined`    |
 | `readonly`       | `readonly`       | If `true`, the user cannot modify the value.                                                                                                                                                                                                                           | `boolean`                                                                                          | `false`        |
 | `required`       | `required`       | If `true`, the user must fill in a value before submitting a form.                                                                                                                                                                                                     | `boolean`                                                                                          | `false`        |
 | `rows`           | `rows`           | The number of visible text lines for the control.                                                                                                                                                                                                                      | `number \| undefined`                                                                              | `undefined`    |
@@ -298,7 +317,7 @@ export default defineComponent({
 | `ionBlur`   | Emitted when the input loses focus.       | `CustomEvent<FocusEvent>`                |
 | `ionChange` | Emitted when the input value has changed. | `CustomEvent<TextareaChangeEventDetail>` |
 | `ionFocus`  | Emitted when the input has focus.         | `CustomEvent<FocusEvent>`                |
-| `ionInput`  | Emitted when a keyboard input occurred.   | `CustomEvent<KeyboardEvent>`             |
+| `ionInput`  | Emitted when a keyboard input occurred.   | `CustomEvent<InputEvent>`                |
 
 
 ## Methods

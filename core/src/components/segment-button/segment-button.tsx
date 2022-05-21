@@ -1,8 +1,9 @@
-import { Component, ComponentInterface, Element, Host, Prop, State, h } from '@stencil/core';
+import { Component, ComponentInterface, Element, Host, Prop, State, forceUpdate, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
 import { SegmentButtonLayout } from '../../interface';
 import { ButtonInterface } from '../../utils/element-interface';
+import { addEventListener, removeEventListener } from '../../utils/helpers';
 import { hostContext } from '../../utils/theme';
 
 let ids = 0;
@@ -53,14 +54,16 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
     const segmentEl = this.segmentEl = this.el.closest('ion-segment');
     if (segmentEl) {
       this.updateState();
-      segmentEl.addEventListener('ionSelect', this.updateState);
+      addEventListener(segmentEl, 'ionSelect', this.updateState);
+      addEventListener(segmentEl, 'ionStyle', this.updateStyle);
     }
   }
 
   disconnectedCallback() {
     const segmentEl = this.segmentEl;
     if (segmentEl) {
-      segmentEl.removeEventListener('ionSelect', this.updateState);
+      removeEventListener(segmentEl, 'ionSelect', this.updateState);
+      removeEventListener(segmentEl, 'ionStyle', this.updateStyle);
       this.segmentEl = null;
     }
   }
@@ -73,24 +76,36 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
     return !!this.el.querySelector('ion-icon');
   }
 
+  private updateStyle = () => {
+    forceUpdate(this);
+  }
+
   private updateState = () => {
     if (this.segmentEl) {
       this.checked = this.segmentEl.value === this.value;
     }
   }
 
+  private get tabIndex() {
+    return this.checked && !this.disabled ? 0 : -1;
+  }
+
   render() {
-    const { checked, type, disabled, hasIcon, hasLabel, layout } = this;
+    const { checked, type, disabled, hasIcon, hasLabel, layout, segmentEl, tabIndex } = this;
     const mode = getIonMode(this);
+    const hasSegmentColor = () => segmentEl !== null && segmentEl.color !== undefined;
     return (
       <Host
+        role="tab"
+        aria-selected={checked ? 'true' : 'false'}
         aria-disabled={disabled ? 'true' : null}
+        tabIndex={tabIndex}
         class={{
           [mode]: true,
           'in-toolbar': hostContext('ion-toolbar', this.el),
           'in-toolbar-color': hostContext('ion-toolbar[color]', this.el),
           'in-segment': hostContext('ion-segment', this.el),
-          'in-segment-color': hostContext('ion-segment[color]', this.el),
+          'in-segment-color': hasSegmentColor(),
           'segment-button-has-label': hasLabel,
           'segment-button-has-icon': hasIcon,
           'segment-button-has-label-only': hasLabel && !hasIcon,
@@ -105,7 +120,7 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
       >
         <button
           type={type}
-          aria-pressed={checked ? 'true' : 'false'}
+          tabIndex={-1}
           class="button-native"
           part="native"
           disabled={disabled}

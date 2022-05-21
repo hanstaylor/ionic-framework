@@ -1,10 +1,14 @@
 import { Config } from '@stencil/core';
 import { sass } from '@stencil/sass';
+import { angularOutputTarget } from '@stencil/angular-output-target';
+import { vueOutputTarget } from '@stencil/vue-output-target';
+import { reactOutputTarget } from '@stencil/react-output-target';
 
 // @ts-ignore
 import { apiSpecGenerator } from './scripts/api-spec-generator';
 
 export const config: Config = {
+  autoprefixCss: true,
   namespace: 'Ionic',
   bundles: [
     { components: ['ion-action-sheet'] },
@@ -50,6 +54,8 @@ export const config: Config = {
     { components: ['ion-toast'] },
     { components: ['ion-toggle'] },
     { components: ['ion-virtual-scroll'] },
+    { components: ['ion-accordion-group', 'ion-accordion'] },
+    { components: ['ion-breadcrumb', 'ion-breadcrumbs'] },
   ],
   plugins: [
     sass({
@@ -57,18 +63,108 @@ export const config: Config = {
     })
   ],
   outputTargets: [
+    reactOutputTarget({
+      componentCorePackage: '@ionic/core',
+      includeImportCustomElements: true,
+      includePolyfills: false,
+      includeDefineCustomElements: false,
+      proxiesFile: '../packages/react/src/components/proxies.ts',
+      excludeComponents: [
+        // Routing
+        'ion-router',
+        'ion-route',
+        'ion-route-redirect',
+        'ion-router-link',
+        'ion-router-outlet',
+        'ion-back-button',
+        'ion-breadcrumb',
+        'ion-tab-button',
+        'ion-tabs',
+        'ion-tab-bar',
+        'ion-button',
+        'ion-card',
+        'ion-fab-button',
+        'ion-item',
+        'ion-item-option',
+
+        // Overlays
+        'ion-action-sheet',
+        'ion-alert',
+        'ion-loading',
+        'ion-modal',
+        'ion-picker',
+        'ion-popover',
+        'ion-toast',
+
+        'ion-app',
+        'ion-icon'
+      ]
+    }),
+    vueOutputTarget({
+      componentCorePackage: '@ionic/core',
+      includeImportCustomElements: true,
+      includePolyfills: false,
+      includeDefineCustomElements: false,
+      proxiesFile: '../packages/vue/src/proxies.ts',
+      excludeComponents: [
+        // Routing
+        'ion-router',
+        'ion-route',
+        'ion-route-redirect',
+        'ion-router-link',
+        'ion-router-outlet',
+        'ion-back-button',
+        'ion-tab-button',
+        'ion-tabs',
+        'ion-tab',
+        'ion-tab-bar',
+
+        // Overlays
+        'ion-action-sheet',
+        'ion-alert',
+        'ion-loading',
+        'ion-modal',
+        'ion-picker',
+        'ion-popover',
+        'ion-toast',
+
+        'ion-app',
+        'ion-icon'
+      ],
+      componentModels: [
+        {
+          elements: ['ion-checkbox', 'ion-toggle'],
+          targetAttr: 'checked',
+          event: 'v-ion-change',
+          externalEvent: 'ionChange'
+        },
+        {
+          elements: ['ion-datetime', 'ion-input', 'ion-radio-group', 'ion-radio', 'ion-range', 'ion-searchbar', 'ion-segment', 'ion-segment-button', 'ion-select', 'ion-textarea', 'ion-accordion-group'],
+          targetAttr: 'value',
+          event: 'v-ion-change',
+          externalEvent: 'ionChange'
+        }
+      ],
+    }),
     {
       type: 'docs-vscode',
       file: 'dist/html.html-data.json',
-      sourceCodeBaseUrl: 'https://github.com/ionic-team/ionic/tree/master/core/',
+      sourceCodeBaseUrl: 'https://github.com/ionic-team/ionic/tree/main/core/',
     },
     {
       type: 'dist',
       esmLoaderPath: '../loader'
     },
-    // {
-    //   type: 'dist-custom-elements-bundle',
-    // },
+    {
+      type: 'dist-custom-elements',
+      dir: 'components',
+      copy: [{
+        src: '../scripts/custom-elements',
+        dest: 'components',
+        warn: true
+      }],
+      includeGlobalScripts: false
+    },
     {
       type: 'docs-readme',
       strict: true
@@ -87,11 +183,9 @@ export const config: Config = {
     //   type: 'stats',
     //   file: 'stats.json'
     // },
-    {
-      type: 'angular',
+    angularOutputTarget({
       componentCorePackage: '@ionic/core',
       directivesProxyFile: '../angular/src/directives/proxies.ts',
-      directivesUtilsFile: '../angular/src/directives/proxies-utils.ts',
       directivesArrayFile: '../angular/src/directives/proxies-list.txt',
       excludeComponents: [
         // overlays
@@ -118,21 +212,58 @@ export const config: Config = {
         // auxiliar
         'ion-picker-column',
         'ion-virtual-scroll'
-      ]
-    }
+      ],
+      /**
+       * TODO: Abstract custom Ionic value accessor functionality
+       * to be configurable with Stencil generated value accessors.
+       */
+      // valueAccessorConfigs: [
+      //   {
+      //     elementSelectors: ['ion-input:not([type=number])', 'ion-textarea', 'ion-searchbar'],
+      //     event: 'ionChange',
+      //     targetAttr: 'value',
+      //     type: 'text',
+      //   },
+      //   {
+      //     elementSelectors: ['ion-input[type=number]'],
+      //     event: 'ionChange',
+      //     targetAttr: 'value',
+      //     type: 'number',
+      //   },
+      //   {
+      //     elementSelectors: ['ion-checkbox', 'ion-toggle'],
+      //     event: 'ionChange',
+      //     targetAttr: 'checked',
+      //     type: 'boolean',
+      //   },
+      //   {
+      //     elementSelectors: ['ion-range', 'ion-select', 'ion-radio-group', 'ion-segment', 'ion-datetime'],
+      //     event: 'ionChange',
+      //     targetAttr: 'value',
+      //     type: 'select',
+      //   },
+      //   {
+      //     elementSelectors: ['ion-radio'],
+      //     event: 'ionSelect',
+      //     targetAttr: 'checked',
+      //     type: 'radio',
+      //   },
+      // ]
+    }),
   ],
+  buildEs5: 'prod',
   extras: {
-    cssVarsShim: true,
     dynamicImportShim: true,
     initializeNextTick: true,
-    safari10: true,
-    scriptDataOpts: true,
-    shadowDomShim: true,
+    scriptDataOpts: true
   },
   testing: {
     allowableMismatchedPixels: 200,
     pixelmatchThreshold: 0.05,
     waitBeforeScreenshot: 20,
+    moduleNameMapper: {
+      "@utils/test": ["<rootDir>/src/utils/test/utils"]
+    },
     emulate: [
       {
         userAgent: 'iPhone',
