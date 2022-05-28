@@ -11,7 +11,7 @@ import {
   TemplateRef,
 } from '@angular/core';
 import { ProxyCmp, proxyOutputs } from '../angular-component-lib/utils';
-import { Components } from '@ionic/core';
+import { Components } from '@nfdoom/ionic-core';
 export declare interface IonPopover extends Components.IonPopover {
   /**
    * Emitted after the popover has presented.

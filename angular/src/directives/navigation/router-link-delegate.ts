@@ -2,7 +2,6 @@ import { LocationStrategy } from '@angular/common';
 import { ElementRef, OnChanges, OnInit, Directive, HostListener, Input, Optional } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AnimationBuilder, RouterDirection } from '@nfdoom/ionic-core';
-import { Subscription } from 'rxjs';
 
 import { NavController } from '../../providers/nav-controller';
 

@@ -1,4 +1,4 @@
-import { Directive, HostListener, Optional } from '@angular/core';
+import { Directive, HostListener, Input, Optional } from '@angular/core';
 import { AnimationBuilder } from '@nfdoom/ionic-core';
 
 import { Config } from '../../providers/config';

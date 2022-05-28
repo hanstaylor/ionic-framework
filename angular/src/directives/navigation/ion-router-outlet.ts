@@ -16,7 +16,7 @@ import {
   SkipSelf,
 } from '@angular/core';
 import { OutletContext, Router, ActivatedRoute, ChildrenOutletContexts, PRIMARY_OUTLET } from '@angular/router';
-import { componentOnReady } from '@ionic/core';
+import { componentOnReady } from '@nfdoom/ionic-core';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators';
 

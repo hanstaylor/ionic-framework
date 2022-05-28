@@ -3,6 +3,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, NgZone } from '@angular/core';
 import { ProxyCmp, proxyOutputs } from './angular-component-lib/utils';
 
+import { Components } from '@nfdoom/ionic-core';
 
 
 
@@ -25,10 +26,9 @@ export class IonAccordion {
     c.detach();
     this.el = r.nativeElement;
   }
-import { Components } from "@nfdoom/ionic-core";
 }
 
-import type { AccordionGroupChangeEventDetail as IAccordionGroupAccordionGroupChangeEventDetail } from '@ionic/core';
+import type { AccordionGroupChangeEventDetail as IAccordionGroupAccordionGroupChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonAccordionGroup extends Components.IonAccordionGroup {
   /**
    * Emitted when the value property has changed. 
@@ -196,7 +196,7 @@ export class IonBreadcrumb {
   }
 }
 
-import type { BreadcrumbCollapsedClickEventDetail as IBreadcrumbsBreadcrumbCollapsedClickEventDetail } from '@ionic/core';
+import type { BreadcrumbCollapsedClickEventDetail as IBreadcrumbsBreadcrumbCollapsedClickEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonBreadcrumbs extends Components.IonBreadcrumbs {
   /**
    * Emitted when the collapsed indicator is clicked on. 
@@ -382,7 +382,7 @@ export class IonCardTitle {
   }
 }
 
-import type { CheckboxChangeEventDetail as ICheckboxCheckboxChangeEventDetail } from '@ionic/core';
+import type { CheckboxChangeEventDetail as ICheckboxCheckboxChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonCheckbox extends Components.IonCheckbox {
   /**
    * Emitted when the checked property has changed. 
@@ -460,8 +460,8 @@ export class IonCol {
   }
 }
 
-import type { ScrollBaseDetail as IContentScrollBaseDetail } from '@ionic/core';
-import type { ScrollDetail as IContentScrollDetail } from '@ionic/core';
+import type { ScrollBaseDetail as IContentScrollBaseDetail } from '@nfdoom/ionic-core';
+import type { ScrollDetail as IContentScrollDetail } from '@nfdoom/ionic-core';
 export declare interface IonContent extends Components.IonContent {
   /**
    * Emitted when the scroll has started. 
@@ -499,7 +499,7 @@ export class IonContent {
   }
 }
 
-import type { DatetimeChangeEventDetail as IDatetimeDatetimeChangeEventDetail } from '@ionic/core';
+import type { DatetimeChangeEventDetail as IDatetimeDatetimeChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonDatetime extends Components.IonDatetime {
   /**
    * Emitted when the datetime selection was cancelled. 
@@ -788,7 +788,7 @@ export class IonInfiniteScrollContent {
   }
 }
 
-import type { InputChangeEventDetail as IInputInputChangeEventDetail } from '@ionic/core';
+import type { InputChangeEventDetail as IInputInputChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonInput extends Components.IonInput {
   /**
    * Emitted when a keyboard input occurred. 
@@ -1243,7 +1243,7 @@ export class IonRadio {
   }
 }
 
-import type { RadioGroupChangeEventDetail as IRadioGroupRadioGroupChangeEventDetail } from '@ionic/core';
+import type { RadioGroupChangeEventDetail as IRadioGroupRadioGroupChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonRadioGroup extends Components.IonRadioGroup {
   /**
    * Emitted when the value has changed. 
@@ -1271,7 +1271,7 @@ export class IonRadioGroup {
   }
 }
 
-import type { RangeChangeEventDetail as IRangeRangeChangeEventDetail } from '@ionic/core';
+import type { RangeChangeEventDetail as IRangeRangeChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonRange extends Components.IonRange {
   /**
    * Emitted when the value property has changed. 
@@ -1307,7 +1307,7 @@ export class IonRange {
   }
 }
 
-import type { RefresherEventDetail as IRefresherRefresherEventDetail } from '@ionic/core';
+import type { RefresherEventDetail as IRefresherRefresherEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonRefresher extends Components.IonRefresher {
   /**
    * Emitted when the user lets go of the content and has pulled down
@@ -1387,7 +1387,7 @@ export class IonReorder {
   }
 }
 
-import type { ItemReorderEventDetail as IReorderGroupItemReorderEventDetail } from '@ionic/core';
+import type { ItemReorderEventDetail as IReorderGroupItemReorderEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonReorderGroup extends Components.IonReorderGroup {
   /**
    * Event that needs to be listened to in order to complete the reorder action.
@@ -1459,7 +1459,7 @@ export class IonRow {
   }
 }
 
-import type { SearchbarChangeEventDetail as ISearchbarSearchbarChangeEventDetail } from '@ionic/core';
+import type { SearchbarChangeEventDetail as ISearchbarSearchbarChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonSearchbar extends Components.IonSearchbar {
   /**
    * Emitted when a keyboard input occurred. 
@@ -1508,7 +1508,7 @@ export class IonSearchbar {
   }
 }
 
-import type { SegmentChangeEventDetail as ISegmentSegmentChangeEventDetail } from '@ionic/core';
+import type { SegmentChangeEventDetail as ISegmentSegmentChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonSegment extends Components.IonSegment {
   /**
    * Emitted when the value property has changed and any
@@ -1558,7 +1558,7 @@ export class IonSegmentButton {
   }
 }
 
-import type { SelectChangeEventDetail as ISelectSelectChangeEventDetail } from '@ionic/core';
+import type { SelectChangeEventDetail as ISelectSelectChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonSelect extends Components.IonSelect {
   /**
    * Emitted when the value has changed. 
@@ -1797,10 +1797,20 @@ export class IonSplitPane {
     proxyOutputs(this, this.el, ['ionSplitPaneVisible']);
   }
 }
-export declare interface IonTabBar extends Components.IonTabBar {
-}
-@ProxyCmp({ inputs: ["color", "mode", "selectedTab", "translucent"] })
-@Component({ selector: "ion-tab-bar", changeDetection: ChangeDetectionStrategy.OnPush, template: "<ng-content></ng-content>", inputs: ["color", "mode", "selectedTab", "translucent"] })
+
+
+export declare interface IonTabBar extends Components.IonTabBar {}
+
+@ProxyCmp({
+  defineCustomElementFn: undefined,
+  inputs: ['color', 'hideOnKeyboard', 'mode', 'selectedTab', 'translucent']
+})
+@Component({
+  selector: 'ion-tab-bar',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: '<ng-content></ng-content>',
+  inputs: ['color', 'hideOnKeyboard', 'mode', 'selectedTab', 'translucent']
+})
 export class IonTabBar {
   protected el: HTMLElement;
   constructor(c: ChangeDetectorRef, r: ElementRef, protected z: NgZone) {
@@ -1851,7 +1861,7 @@ export class IonText {
   }
 }
 
-import type { TextareaChangeEventDetail as ITextareaTextareaChangeEventDetail } from '@ionic/core';
+import type { TextareaChangeEventDetail as ITextareaTextareaChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonTextarea extends Components.IonTextarea {
   /**
    * Emitted when the input value has changed. 
@@ -1932,7 +1942,7 @@ export class IonTitle {
   }
 }
 
-import type { ToggleChangeEventDetail as IToggleToggleChangeEventDetail } from '@ionic/core';
+import type { ToggleChangeEventDetail as IToggleToggleChangeEventDetail } from '@nfdoom/ionic-core';
 export declare interface IonToggle extends Components.IonToggle {
   /**
    * Emitted when the value property has changed. 

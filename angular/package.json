@@ -1,6 +1,6 @@
 {
   "name": "@nfdoom/ionic-angular",
-  "version": "5.3.12",
+  "version": "6.0.0",
   "description": "Angular specific wrappers for @nfdoom/ionic-core",
   "keywords": [
     "ionic",
@@ -44,9 +44,9 @@
     "validate": "npm i && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
-    "@nfdoom/ionic-core": "5.3.12",
-    "tslib": "^1.9.3"
+    "@nfdoom/ionic-core": "6.0.0",
     "jsonc-parser": "^3.0.0",
+    "tslib": "^2.0.0"
   },
   "peerDependencies": {
     "@angular/core": ">=12.0.0",
@@ -89,8 +89,9 @@
     "lib": {
       "entryFile": "src/index.ts"
     },
-    "whitelistedNonPeerDependencies": [
-      "@ionic/core"
+    "allowedNonPeerDependencies": [
+      "@nfdoom/ionic-core",
+      "jsonc-parser"
     ]
   }
 }
