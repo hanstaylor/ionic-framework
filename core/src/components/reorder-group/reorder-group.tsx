@@ -1,22 +1,25 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, State, Watch, h } from '@stencil/core';
+import type { ComponentInterface, EventEmitter } from '@stencil/core';
+import { Component, Element, Event, Host, Method, Prop, State, Watch, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
-import { Gesture, GestureDetail, ItemReorderEventDetail } from '../../interface';
-import { componentOnReady } from '../../utils/helpers';
+import type { Gesture, GestureDetail, ItemReorderEventDetail } from '../../interface';
+import { findClosestIonContent, getScrollElement } from '../../utils/content';
+import { raf } from '../../utils/helpers';
 import { hapticSelectionChanged, hapticSelectionEnd, hapticSelectionStart } from '../../utils/native/haptic';
+
+// TODO(FW-2832): types
 
 const enum ReorderGroupState {
   Idle = 0,
   Active = 1,
-  Complete = 2
+  Complete = 2,
 }
 
 @Component({
   tag: 'ion-reorder-group',
-  styleUrl: 'reorder-group.scss'
+  styleUrl: 'reorder-group.scss',
 })
 export class ReorderGroup implements ComponentInterface {
-
   private selectedItemEl?: HTMLElement;
   private selectedItemHeight!: number;
   private lastToIndex = -1;
@@ -54,10 +57,9 @@ export class ReorderGroup implements ComponentInterface {
   @Event() ionItemReorder!: EventEmitter<ItemReorderEventDetail>;
 
   async connectedCallback() {
-    const contentEl = this.el.closest('ion-content');
+    const contentEl = findClosestIonContent(this.el);
     if (contentEl) {
-      await new Promise(resolve => componentOnReady(contentEl, resolve));
-      this.scrollEl = await contentEl.getScrollElement();
+      this.scrollEl = await getScrollElement(contentEl);
     }
     this.gesture = (await import('../../utils/gesture')).createGesture({
       el: this.el,
@@ -66,9 +68,9 @@ export class ReorderGroup implements ComponentInterface {
       threshold: 0,
       direction: 'y',
       passive: false,
-      canStart: detail => this.canStart(detail),
-      onStart: ev => this.onStart(ev),
-      onMove: ev => this.onMove(ev),
+      canStart: (detail) => this.canStart(detail),
+      onStart: (ev) => this.onStart(ev),
+      onMove: (ev) => this.onMove(ev),
       onEnd: () => this.onEnd(),
     });
 
@@ -98,7 +100,7 @@ export class ReorderGroup implements ComponentInterface {
    */
   @Method()
   complete(listOrReorder?: boolean | any[]): Promise<any> {
-    return Promise.resolve(this.completeSync(listOrReorder));
+    return Promise.resolve(this.completeReorder(listOrReorder));
   }
 
   private canStart(ev: GestureDetail): boolean {
@@ -121,7 +123,7 @@ export class ReorderGroup implements ComponentInterface {
   private onStart(ev: GestureDetail) {
     ev.event.preventDefault();
 
-    const item = this.selectedItemEl = ev.data;
+    const item = (this.selectedItemEl = ev.data);
     const heights = this.cachedHeights;
     heights.length = 0;
     const el = this.el;
@@ -201,19 +203,19 @@ export class ReorderGroup implements ComponentInterface {
     const fromIndex = indexForItem(selectedItemEl);
 
     if (toIndex === fromIndex) {
-      this.completeSync();
+      this.completeReorder();
     } else {
       this.ionItemReorder.emit({
         from: fromIndex,
         to: toIndex,
-        complete: this.completeSync.bind(this)
+        complete: this.completeReorder.bind(this),
       });
     }
 
     hapticSelectionEnd();
   }
 
-  private completeSync(listOrReorder?: boolean | any[]): any {
+  private completeReorder(listOrReorder?: boolean | any[]): any {
     const selectedItemEl = this.selectedItemEl;
     if (selectedItemEl && this.state === ReorderGroupState.Complete) {
       const children = this.el.children as any;
@@ -221,20 +223,27 @@ export class ReorderGroup implements ComponentInterface {
       const toIndex = this.lastToIndex;
       const fromIndex = indexForItem(selectedItemEl);
 
-      if (toIndex !== fromIndex && (listOrReorder === undefined || listOrReorder === true)) {
-        const ref = (fromIndex < toIndex)
-          ? children[toIndex + 1]
-          : children[toIndex];
+      /**
+       * insertBefore and setting the transform
+       * needs to happen in the same frame otherwise
+       * there will be a duplicate transition. This primarily
+       * impacts Firefox where insertBefore and transform operations
+       * are happening in two separate frames.
+       */
+      raf(() => {
+        if (toIndex !== fromIndex && (listOrReorder === undefined || listOrReorder === true)) {
+          const ref = fromIndex < toIndex ? children[toIndex + 1] : children[toIndex];
 
-        this.el.insertBefore(selectedItemEl, ref);
-      }
+          this.el.insertBefore(selectedItemEl, ref);
+        }
+
+        for (let i = 0; i < len; i++) {
+          children[i].style['transform'] = '';
+        }
+      });
 
       if (Array.isArray(listOrReorder)) {
         listOrReorder = reorderArray(listOrReorder, fromIndex, toIndex);
-      }
-
-      for (let i = 0; i < len; i++) {
-        children[i].style['transform'] = '';
       }
 
       selectedItemEl.style.transition = '';
@@ -248,9 +257,6 @@ export class ReorderGroup implements ComponentInterface {
   private itemIndexForTop(deltaY: number): number {
     const heights = this.cachedHeights;
 
-    // TODO: since heights is a sorted array of integers, we can do
-    // speed up the search using binary search. Remember that linear-search is still
-    // faster than binary-search for small arrays (<64) due CPU branch misprediction.
     for (let i = 0; i < heights.length; i++) {
       if (heights[i] > deltaY) {
         return i;
@@ -301,9 +307,7 @@ export class ReorderGroup implements ComponentInterface {
           'reorder-enabled': !this.disabled,
           'reorder-list-active': this.state !== ReorderGroupState.Idle,
         }}
-      >
-
-      </Host>
+      ></Host>
     );
   }
 }

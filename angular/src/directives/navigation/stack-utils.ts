@@ -74,7 +74,6 @@ export const toSegments = (path: string): string[] => {
 
 export const destroyView = (view: RouteView | undefined): void => {
   if (view) {
-    // TODO lifecycle event
     view.ref.destroy();
     view.unlistenEvents();
   }
@@ -87,6 +86,7 @@ export interface StackEvent {
   tabSwitch: boolean;
 }
 
+// TODO(FW-2827): types
 export interface RouteView {
   id: number;
   url: string;

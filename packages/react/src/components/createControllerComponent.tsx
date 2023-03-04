@@ -1,7 +1,7 @@
-import { OverlayEventDetail } from '@ionic/core/components';
+import type { OverlayEventDetail } from '@ionic/core/components';
 import React from 'react';
 
-import { attachProps, dashToPascalCase, defineCustomElement, setRef } from './react-component-lib/utils';
+import { attachProps, dashToPascalCase, setRef } from './react-component-lib/utils';
 
 interface OverlayBase extends HTMLElement {
   present: () => Promise<void>;
@@ -16,15 +16,14 @@ export interface ReactControllerProps {
   onWillPresent?: (event: CustomEvent<OverlayEventDetail>) => void;
 }
 
-export const createControllerComponent = <
-  OptionsType extends object,
-  OverlayType extends OverlayBase
->(
+export const createControllerComponent = <OptionsType extends object, OverlayType extends OverlayBase>(
   tagName: string,
   controller: { create: (options: OptionsType) => Promise<OverlayType> },
-  customElement?: any
+  defineCustomElement?: () => void
 ) => {
-  defineCustomElement(tagName, customElement);
+  if (defineCustomElement) {
+    defineCustomElement();
+  }
 
   const displayName = dashToPascalCase(tagName);
   const didDismissEventName = `on${displayName}DidDismiss`;
@@ -39,7 +38,7 @@ export const createControllerComponent = <
 
   class Overlay extends React.Component<Props> {
     overlay?: OverlayType;
-    isUnmounted = false;
+    willUnmount = false;
 
     constructor(props: Props) {
       super(props);
@@ -51,6 +50,14 @@ export const createControllerComponent = <
     }
 
     async componentDidMount() {
+      /**
+       * Starting in React v18, strict mode will unmount and remount a component.
+       * See: https://reactjs.org/blog/2022/03/29/react-v18.html#new-strict-mode-behaviors
+       *
+       * We need to reset this flag when the component is re-mounted so that
+       * overlay.present() will be called and the overlay will display.
+       */
+      this.willUnmount = false;
       const { isOpen } = this.props;
       if (isOpen as boolean) {
         this.present();
@@ -58,7 +65,7 @@ export const createControllerComponent = <
     }
 
     componentWillUnmount() {
-      this.isUnmounted = true;
+      this.willUnmount = true;
       if (this.overlay) {
         this.overlay.dismiss();
       }
@@ -77,18 +84,17 @@ export const createControllerComponent = <
       if (this.props.onDidDismiss) {
         this.props.onDidDismiss(event);
       }
-      setRef(this.props.forwardedRef, null)
+      setRef(this.props.forwardedRef, null);
     }
 
     async present(prevProps?: Props) {
-      const {
-        isOpen,
-        onDidDismiss,
-        onDidPresent,
-        onWillDismiss,
-        onWillPresent,
-        ...cProps
-      } = this.props;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { isOpen, onDidDismiss, onDidPresent, onWillDismiss, onWillPresent, ...cProps } = this.props;
+
+      if (this.overlay) {
+        this.overlay.remove();
+      }
+
       this.overlay = await controller.create({
         ...(cProps as any),
       });
@@ -96,19 +102,16 @@ export const createControllerComponent = <
         this.overlay,
         {
           [didDismissEventName]: this.handleDismiss,
-          [didPresentEventName]: (e: CustomEvent) =>
-            this.props.onDidPresent && this.props.onDidPresent(e),
-          [willDismissEventName]: (e: CustomEvent) =>
-            this.props.onWillDismiss && this.props.onWillDismiss(e),
-          [willPresentEventName]: (e: CustomEvent) =>
-            this.props.onWillPresent && this.props.onWillPresent(e),
+          [didPresentEventName]: (e: CustomEvent) => this.props.onDidPresent && this.props.onDidPresent(e),
+          [willDismissEventName]: (e: CustomEvent) => this.props.onWillDismiss && this.props.onWillDismiss(e),
+          [willPresentEventName]: (e: CustomEvent) => this.props.onWillPresent && this.props.onWillPresent(e),
         },
         prevProps
       );
       // Check isOpen again since the value could have changed during the async call to controller.create
       // It's also possible for the component to have become unmounted.
-      if (this.props.isOpen === true && this.isUnmounted === false) {
-        setRef(this.props.forwardedRef, this.overlay)
+      if (this.props.isOpen === true && this.willUnmount === false) {
+        setRef(this.props.forwardedRef, this.overlay);
         await this.overlay.present();
       }
     }

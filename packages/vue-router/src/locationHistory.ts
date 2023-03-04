@@ -1,4 +1,4 @@
-import { RouteInfo } from './types';
+import type { RouteInfo } from "./types";
 
 export const createLocationHistory = () => {
   const locationHistory: RouteInfo[] = [];
@@ -6,9 +6,6 @@ export const createLocationHistory = () => {
 
   const add = (routeInfo: RouteInfo) => {
     switch (routeInfo.routerAction) {
-      case "replace":
-        replaceRoute(routeInfo);
-        break;
       case "pop":
         pop(routeInfo);
         break;
@@ -17,20 +14,22 @@ export const createLocationHistory = () => {
         break;
     }
 
-    if (routeInfo.routerDirection === 'root') {
+    if (routeInfo.routerDirection === "root") {
       clearHistory();
       addRoute(routeInfo);
     }
-  }
+  };
 
   const update = (routeInfo: RouteInfo) => {
-    const locationIndex = locationHistory.findIndex(x => x.id === routeInfo.id);
+    const locationIndex = locationHistory.findIndex(
+      (x) => x.id === routeInfo.id
+    );
     if (locationIndex > -1) {
       locationHistory.splice(locationIndex, 1, routeInfo);
     }
-    const tabArray = tabsHistory[routeInfo.tab || ''];
+    const tabArray = tabsHistory[routeInfo.tab || ""];
     if (tabArray) {
-      const tabIndex = tabArray.findIndex(x => x.id === routeInfo.id);
+      const tabIndex = tabArray.findIndex((x) => x.id === routeInfo.id);
       if (tabIndex > -1) {
         tabArray.splice(tabIndex, 1, routeInfo);
       } else {
@@ -39,14 +38,7 @@ export const createLocationHistory = () => {
     } else if (routeInfo.tab) {
       tabsHistory[routeInfo.tab] = [routeInfo];
     }
-  }
-
-  const replaceRoute = (routeInfo: RouteInfo) => {
-    const routeInfos = getTabsHistory(routeInfo.tab);
-    routeInfos && routeInfos.pop();
-    locationHistory.pop();
-    addRoute(routeInfo);
-  }
+  };
 
   const pop = (routeInfo: RouteInfo) => {
     const tabHistory = getTabsHistory(routeInfo.tab);
@@ -71,19 +63,22 @@ export const createLocationHistory = () => {
     // Replace with updated route
     locationHistory.pop();
     locationHistory.push(routeInfo);
-  }
+  };
 
   const addRoute = (routeInfo: RouteInfo) => {
     const tabHistory = getTabsHistory(routeInfo.tab);
     if (tabHistory) {
       // If the latest routeInfo is the same (going back and forth between tabs), replace it
-      if (tabHistory[tabHistory.length - 1] && tabHistory[tabHistory.length - 1].id === routeInfo.id) {
+      if (
+        tabHistory[tabHistory.length - 1] &&
+        tabHistory[tabHistory.length - 1].id === routeInfo.id
+      ) {
         tabHistory.pop();
       }
       tabHistory.push(routeInfo);
     }
     locationHistory.push(routeInfo);
-  }
+  };
 
   /**
    * Wipes the location history arrays.
@@ -93,16 +88,28 @@ export const createLocationHistory = () => {
    */
   const clearHistory = (routeInfo?: RouteInfo) => {
     if (routeInfo) {
+      const { position, tab } = routeInfo;
 
       /**
        * If there is no route index in locationHistory
        * then there will not be any route index in
        * tabs either.
        */
-      const existingRouteIndex = locationHistory.findIndex(r => r.position === routeInfo.position);
+      const existingRouteIndex = locationHistory.findIndex(
+        (r) => r.position === position
+      );
       if (existingRouteIndex === -1) return;
 
       locationHistory.splice(existingRouteIndex);
+
+      const clearTabHistory = (tab: string) => {
+        const existingTabRouteIndex = tabsHistory[tab].findIndex(
+          (r) => r.position === position
+        );
+        if (existingTabRouteIndex === -1) return;
+
+        tabsHistory[tab].splice(existingTabRouteIndex);
+      };
 
       /**
        * We also need to search the current tab
@@ -111,23 +118,35 @@ export const createLocationHistory = () => {
        * tab stack as that means we will lose
        * a reference to the root tab route.
        */
-      const { tab } = routeInfo;
       const tabHistory = tabsHistory[tab];
       if (tab && tabHistory) {
-        const existingTabRouteIndex = tabHistory.findIndex(r => r.position === routeInfo.position);
-        if (existingTabRouteIndex === -1) return;
-
-        tabsHistory[tab].splice(existingTabRouteIndex);
+        clearTabHistory(tab);
+        /**
+         * If we are not clearing items after
+         * a tabs page, it is still possible
+         * that there are future tabs pages to clear.
+         * As a result, we need to search through
+         * all the tab stacks and remove views that appear
+         * after the given routeInfo.
+         *
+         * Example: /non-tabs-page --> /tabs/tab1 --> /non-tabs-page
+         * (via router.go(-1)) --> /tabs/tab2. The /tabs/tab1 history
+         * has been overwritten with /tabs/tab2. As a result,
+         * the /tabs/tab1 route info in the Tab 1 stack should be removed.
+         */
+      } else {
+        for (const tab in tabsHistory) {
+          clearTabHistory(tab);
+        }
       }
-
     } else {
-      Object.keys(tabsHistory).forEach(key => {
-        tabsHistory[key] = [];
-      });
+      for (const tab in tabsHistory) {
+        tabsHistory[tab] = [];
+      }
 
       locationHistory.length = 0;
     }
-  }
+  };
   const getTabsHistory = (tab: string): RouteInfo[] => {
     let history;
     if (tab) {
@@ -138,7 +157,7 @@ export const createLocationHistory = () => {
     }
 
     return history;
-  }
+  };
 
   const size = () => locationHistory.length;
 
@@ -156,7 +175,7 @@ export const createLocationHistory = () => {
      */
     const index = currentHistory - initialHistory;
     return locationHistory[index] || last();
-  }
+  };
   const last = () => locationHistory[locationHistory.length - 1];
 
   /**
@@ -167,9 +186,13 @@ export const createLocationHistory = () => {
    * the length of locationHistory, but that only worked since we were pruning
    * the array.
    */
-  const canGoBack = (deep: number = 1, initialHistory: number, currentHistory: number) => {
+  const canGoBack = (
+    deep = 1,
+    initialHistory: number,
+    currentHistory: number
+  ) => {
     return currentHistory - deep >= initialHistory;
-  }
+  };
 
   const getFirstRouteInfoForTab = (tab: string): RouteInfo | undefined => {
     const tabHistory = getTabsHistory(tab);
@@ -177,7 +200,7 @@ export const createLocationHistory = () => {
       return tabHistory[0];
     }
     return undefined;
-  }
+  };
 
   const getCurrentRouteInfoForTab = (tab: string): RouteInfo | undefined => {
     const tabHistory = getTabsHistory(tab);
@@ -185,7 +208,7 @@ export const createLocationHistory = () => {
       return tabHistory[tabHistory.length - 1];
     }
     return undefined;
-  }
+  };
 
   /**
    * Finds and returns the previous view based upon
@@ -197,7 +220,10 @@ export const createLocationHistory = () => {
    * do not modify the locationHistory stack so we would
    * not update pushedByRoute anyways.
    */
-  const findLastLocation = (routeInfo: RouteInfo, delta: number = -1): RouteInfo | undefined => {
+  const findLastLocation = (
+    routeInfo: RouteInfo,
+    delta = -1
+  ): RouteInfo | undefined => {
     const routeInfos = getTabsHistory(routeInfo.tab);
     if (routeInfos) {
       if (delta < -1) {
@@ -226,7 +252,7 @@ export const createLocationHistory = () => {
       }
     }
     return undefined;
-  }
+  };
 
   return {
     current,
@@ -238,6 +264,6 @@ export const createLocationHistory = () => {
     getFirstRouteInfoForTab,
     getCurrentRouteInfoForTab,
     findLastLocation,
-    clearHistory
-  }
-}
+    clearHistory,
+  };
+};

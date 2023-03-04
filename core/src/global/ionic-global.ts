@@ -1,9 +1,11 @@
 import { getMode, setMode, setPlatformHelpers } from '@stencil/core';
 
-import { IonicConfig, Mode } from '../interface';
+import type { IonicConfig, Mode } from '../interface';
 import { isPlatform, setupPlatforms } from '../utils/platform';
 
 import { config, configFromSession, configFromURL, saveConfig } from './config';
+
+// TODO(FW-2832): types
 
 declare const Context: any;
 
@@ -14,12 +16,14 @@ export const getIonMode = (ref?: any): Mode => {
 };
 
 export const initialize = (userConfig: IonicConfig = {}) => {
-  if (typeof (window as any) === 'undefined') { return; }
+  if (typeof (window as any) === 'undefined') {
+    return;
+  }
 
   const doc = window.document;
   const win = window;
   Context.config = config;
-  const Ionic = (win as any).Ionic = (win as any).Ionic || {};
+  const Ionic = ((win as any).Ionic = (win as any).Ionic || {});
 
   const platformHelpers: any = {};
   if (userConfig._ael) {
@@ -40,7 +44,7 @@ export const initialize = (userConfig: IonicConfig = {}) => {
     persistConfig: false,
     ...Ionic.config,
     ...configFromURL(win),
-    ...userConfig
+    ...userConfig,
   };
 
   config.reset(configObj);
@@ -55,7 +59,10 @@ export const initialize = (userConfig: IonicConfig = {}) => {
   // which could have been set by the user, or by pre-rendering
   // otherwise get the mode via config settings, and fallback to md
   Ionic.config = config;
-  Ionic.mode = defaultMode = config.get('mode', (doc.documentElement.getAttribute('mode')) || (isPlatform(win, 'ios') ? 'ios' : 'md'));
+  Ionic.mode = defaultMode = config.get(
+    'mode',
+    doc.documentElement.getAttribute('mode') || (isPlatform(win, 'ios') ? 'ios' : 'md')
+  );
   config.set('mode', defaultMode);
   doc.documentElement.setAttribute('mode', defaultMode);
   doc.documentElement.classList.add(defaultMode);
@@ -64,11 +71,9 @@ export const initialize = (userConfig: IonicConfig = {}) => {
     config.set('animated', false);
   }
 
-  const isIonicElement = (elm: any) =>
-        elm.tagName && elm.tagName.startsWith('ION-');
+  const isIonicElement = (elm: any) => elm.tagName?.startsWith('ION-');
 
-  const isAllowedIonicModeValue = (elmMode: string) =>
-      ['ios', 'md'].includes(elmMode);
+  const isAllowedIonicModeValue = (elmMode: string) => ['ios', 'md'].includes(elmMode);
 
   setMode((elm: any) => {
     while (elm) {

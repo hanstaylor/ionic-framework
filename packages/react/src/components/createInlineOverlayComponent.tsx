@@ -1,4 +1,4 @@
-import { OverlayEventDetail } from '@ionic/core/components'
+import type { OverlayEventDetail } from '@ionic/core/components';
 import React, { createElement } from 'react';
 
 import {
@@ -10,9 +10,11 @@ import {
 } from './react-component-lib/utils';
 import { createForwardRef } from './utils';
 
+// TODO(FW-2959): types
+
 type InlineOverlayState = {
   isOpen: boolean;
-}
+};
 
 interface IonicReactInternalProps<ElementType> extends React.HTMLAttributes<ElementType> {
   forwardedRef?: React.ForwardedRef<ElementType>;
@@ -21,6 +23,7 @@ interface IonicReactInternalProps<ElementType> extends React.HTMLAttributes<Elem
   onDidPresent?: (event: CustomEvent<OverlayEventDetail>) => void;
   onWillDismiss?: (event: CustomEvent<OverlayEventDetail>) => void;
   onWillPresent?: (event: CustomEvent<OverlayEventDetail>) => void;
+  keepContentsMounted?: boolean;
 }
 
 export const createInlineOverlayComponent = <PropType, ElementType>(
@@ -34,14 +37,14 @@ export const createInlineOverlayComponent = <PropType, ElementType>(
   const ReactComponent = class extends React.Component<IonicReactInternalProps<PropType>, InlineOverlayState> {
     ref: React.RefObject<HTMLElement>;
     wrapperRef: React.RefObject<HTMLElement>;
-    stableMergedRefs: React.RefCallback<HTMLElement>
+    stableMergedRefs: React.RefCallback<HTMLElement>;
 
     constructor(props: IonicReactInternalProps<PropType>) {
       super(props);
       // Create a local ref to to attach props to the wrapped element.
       this.ref = React.createRef();
       // React refs must be stable (not created inline).
-      this.stableMergedRefs = mergeRefs(this.ref, this.props.forwardedRef)
+      this.stableMergedRefs = mergeRefs(this.ref, this.props.forwardedRef);
       // Component is hidden by default
       this.state = { isOpen: false };
       // Create a local ref to the inner child element.
@@ -50,6 +53,17 @@ export const createInlineOverlayComponent = <PropType, ElementType>(
 
     componentDidMount() {
       this.componentDidUpdate(this.props);
+
+      /**
+       * Mount the inner component when the
+       * overlay is about to open.
+       *
+       * For ion-popover, this is when `ionMount` is emitted.
+       * For other overlays, this is when `willPresent` is emitted.
+       */
+      this.ref.current?.addEventListener('ionMount', () => {
+        this.setState({ isOpen: true });
+      });
 
       /**
        * Mount the inner component
@@ -102,6 +116,7 @@ export const createInlineOverlayComponent = <PropType, ElementType>(
     }
 
     render() {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { children, forwardedRef, style, className, ref, ...cProps } = this.props;
 
       const propsToPass = Object.keys(cProps).reduce((acc, name) => {
@@ -122,23 +137,35 @@ export const createInlineOverlayComponent = <PropType, ElementType>(
         style,
       };
 
-      /**
-       * We only want the inner component
-       * to be mounted if the overlay is open,
-       * so conditionally render the component
-       * based on the isOpen state.
-       */
-      return createElement(tagName, newProps, (this.state.isOpen) ?
-        createElement('div', {
-          id: 'ion-react-wrapper',
-          ref: this.wrapperRef,
-          style: {
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%'
-          }
-        }, children) :
-        null
+      return createElement(
+        'template',
+        {},
+        createElement(
+          tagName,
+          newProps,
+          /**
+           * We only want the inner component
+           * to be mounted if the overlay is open,
+           * so conditionally render the component
+           * based on the isOpen state.
+           */
+          this.state.isOpen || this.props.keepContentsMounted
+            ? createElement(
+                'div',
+                {
+                  id: 'ion-react-wrapper',
+                  ref: this.wrapperRef,
+                  className: 'ion-delegate-host',
+                  style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                  },
+                },
+                children
+              )
+            : null
+        )
       );
     }
 

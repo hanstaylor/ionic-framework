@@ -3,24 +3,16 @@ description: 'Build Ionic Vue'
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@v3
       with:
-        node-version: 15.x
-
-    - name: Cache Core Node Modules
-      uses: actions/cache@v2
-      env:
-        cache-name: core-node-modules
-      with:
-        path: ./core/node_modules
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./core/package-lock.json') }}-v2
+        node-version: 16.x
     - uses: ./.github/workflows/actions/download-archive
       with:
         name: ionic-core
         path: ./core
         filename: CoreBuild.zip
     - name: Install Vue Dependencies
-      run: npm install
+      run: npm ci
       shell: bash
       working-directory: ./packages/vue
     - name: Sync
@@ -33,6 +25,10 @@ runs:
       working-directory: ./packages/vue
     - name: Build
       run: npm run build
+      shell: bash
+      working-directory: ./packages/vue
+    - name: Check Diff
+      run: git diff --exit-code
       shell: bash
       working-directory: ./packages/vue
     - uses: ./.github/workflows/actions/upload-archive

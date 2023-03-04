@@ -1,9 +1,9 @@
-import { componentOnReady } from '@ionic/core';
+import { componentOnReady } from '@ionic/core/components';
 import React from 'react';
 
 import { IonRouterOutletInner } from '../components/inner-proxies';
 import { IonLifeCycleContext } from '../contexts/IonLifeCycleContext';
-import { RouteInfo } from '../models';
+import type { RouteInfo } from '../models';
 
 import { StackContext } from './StackContext';
 
@@ -11,61 +11,47 @@ interface OutletPageManagerProps {
   className?: string;
   forwardedRef?: React.ForwardedRef<HTMLIonRouterOutletElement>;
   routeInfo?: RouteInfo;
-  StackManager: any;
+  StackManager: any; // TODO(FW-2959): type
 }
 
 export class OutletPageManager extends React.Component<OutletPageManagerProps> {
   ionLifeCycleContext!: React.ContextType<typeof IonLifeCycleContext>;
   context!: React.ContextType<typeof StackContext>;
   ionRouterOutlet: HTMLIonRouterOutletElement | undefined;
+  outletIsReady: boolean;
 
   constructor(props: OutletPageManagerProps) {
     super(props);
+
+    this.outletIsReady = false;
   }
 
   componentDidMount() {
     if (this.ionRouterOutlet) {
-      componentOnReady(this.ionRouterOutlet, () => {
-        this.context.registerIonPage(this.ionRouterOutlet!, this.props.routeInfo!);
-      });
+      /**
+       * This avoids multiple raf calls
+       * when React unmounts + remounts components.
+       */
+      if (!this.outletIsReady) {
+        componentOnReady(this.ionRouterOutlet, () => {
+          this.outletIsReady = true;
+          this.context.registerIonPage(this.ionRouterOutlet!, this.props.routeInfo!);
+        });
+      }
 
-      this.ionRouterOutlet.addEventListener(
-        'ionViewWillEnter',
-        this.ionViewWillEnterHandler.bind(this)
-      );
-      this.ionRouterOutlet.addEventListener(
-        'ionViewDidEnter',
-        this.ionViewDidEnterHandler.bind(this)
-      );
-      this.ionRouterOutlet.addEventListener(
-        'ionViewWillLeave',
-        this.ionViewWillLeaveHandler.bind(this)
-      );
-      this.ionRouterOutlet.addEventListener(
-        'ionViewDidLeave',
-        this.ionViewDidLeaveHandler.bind(this)
-      );
+      this.ionRouterOutlet.addEventListener('ionViewWillEnter', this.ionViewWillEnterHandler.bind(this));
+      this.ionRouterOutlet.addEventListener('ionViewDidEnter', this.ionViewDidEnterHandler.bind(this));
+      this.ionRouterOutlet.addEventListener('ionViewWillLeave', this.ionViewWillLeaveHandler.bind(this));
+      this.ionRouterOutlet.addEventListener('ionViewDidLeave', this.ionViewDidLeaveHandler.bind(this));
     }
   }
 
   componentWillUnmount() {
     if (this.ionRouterOutlet) {
-      this.ionRouterOutlet.removeEventListener(
-        'ionViewWillEnter',
-        this.ionViewWillEnterHandler.bind(this)
-      );
-      this.ionRouterOutlet.removeEventListener(
-        'ionViewDidEnter',
-        this.ionViewDidEnterHandler.bind(this)
-      );
-      this.ionRouterOutlet.removeEventListener(
-        'ionViewWillLeave',
-        this.ionViewWillLeaveHandler.bind(this)
-      );
-      this.ionRouterOutlet.removeEventListener(
-        'ionViewDidLeave',
-        this.ionViewDidLeaveHandler.bind(this)
-      );
+      this.ionRouterOutlet.removeEventListener('ionViewWillEnter', this.ionViewWillEnterHandler.bind(this));
+      this.ionRouterOutlet.removeEventListener('ionViewDidEnter', this.ionViewDidEnterHandler.bind(this));
+      this.ionRouterOutlet.removeEventListener('ionViewWillLeave', this.ionViewWillLeaveHandler.bind(this));
+      this.ionRouterOutlet.removeEventListener('ionViewDidLeave', this.ionViewDidLeaveHandler.bind(this));
     }
   }
 

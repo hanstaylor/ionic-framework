@@ -19,7 +19,9 @@ interface ToolbarIndex {
 
 export const cloneElement = (tagName: string) => {
   const getCachedEl = document.querySelector(`${tagName}.ion-cloned-element`);
-  if (getCachedEl !== null) { return getCachedEl; }
+  if (getCachedEl !== null) {
+    return getCachedEl;
+  }
 
   const clonedEl = document.createElement(tagName);
   clonedEl.classList.add('ion-cloned-element');
@@ -30,29 +32,31 @@ export const cloneElement = (tagName: string) => {
 };
 
 export const createHeaderIndex = (headerEl: HTMLElement | undefined): HeaderIndex | undefined => {
-  if (!headerEl) { return; }
+  if (!headerEl) {
+    return;
+  }
 
   const toolbars = headerEl.querySelectorAll('ion-toolbar');
 
   return {
     el: headerEl,
-    toolbars: Array.from(toolbars).map((toolbar: any) => {
+    toolbars: Array.from(toolbars).map((toolbar: HTMLIonToolbarElement) => {
       const ionTitleEl = toolbar.querySelector('ion-title');
       return {
         el: toolbar,
         background: toolbar.shadowRoot!.querySelector('.toolbar-background'),
         ionTitleEl,
-        innerTitleEl: (ionTitleEl) ? ionTitleEl.shadowRoot!.querySelector('.toolbar-title') : null,
-        ionButtonsEl: Array.from(toolbar.querySelectorAll('ion-buttons')) || []
+        innerTitleEl: ionTitleEl ? ionTitleEl.shadowRoot!.querySelector('.toolbar-title') : null,
+        ionButtonsEl: Array.from(toolbar.querySelectorAll('ion-buttons')),
       } as ToolbarIndex;
-    }) || []
+    }),
   } as HeaderIndex;
 };
 
 export const handleContentScroll = (scrollEl: HTMLElement, scrollHeaderIndex: HeaderIndex, contentEl: HTMLElement) => {
   readTask(() => {
     const scrollTop = scrollEl.scrollTop;
-    const scale = clamp(1, 1 + (-scrollTop / 500), 1.1);
+    const scale = clamp(1, 1 + -scrollTop / 500, 1.1);
 
     // Native refresher should not cause titles to scale
     const nativeRefresher = contentEl.querySelector('ion-refresher.refresher-native');
@@ -71,7 +75,9 @@ export const setToolbarBackgroundOpacity = (headerEl: HTMLIonHeaderElement, opac
    * has collapsed, so it is handled
    * by handleHeaderFade()
    */
-  if (headerEl.collapse === 'fade') { return; }
+  if (headerEl.collapse === 'fade') {
+    return;
+  }
 
   if (opacity === undefined) {
     headerEl.style.removeProperty('--opacity-scale');
@@ -80,8 +86,14 @@ export const setToolbarBackgroundOpacity = (headerEl: HTMLIonHeaderElement, opac
   }
 };
 
-const handleToolbarBorderIntersection = (ev: any, mainHeaderIndex: HeaderIndex, scrollTop: number) => {
-  if (!ev[0].isIntersecting) { return; }
+const handleToolbarBorderIntersection = (
+  ev: IntersectionObserverEntry[],
+  mainHeaderIndex: HeaderIndex,
+  scrollTop: number
+) => {
+  if (!ev[0].isIntersecting) {
+    return;
+  }
 
   /**
    * There is a bug in Safari where overflow scrolling on a non-body element
@@ -94,9 +106,9 @@ const handleToolbarBorderIntersection = (ev: any, mainHeaderIndex: HeaderIndex, 
    * the content is transformed which can cause the intersection observer to erroneously
    * fire here as well.
    */
-  const scale = (ev[0].intersectionRatio > 0.9 || scrollTop <= 0) ? 0 : ((1 - ev[0].intersectionRatio) * 100) / 75;
+  const scale = ev[0].intersectionRatio > 0.9 || scrollTop <= 0 ? 0 : ((1 - ev[0].intersectionRatio) * 100) / 75;
 
-  setToolbarBackgroundOpacity(mainHeaderIndex.el, (scale === 1) ? undefined : scale);
+  setToolbarBackgroundOpacity(mainHeaderIndex.el, scale === 1 ? undefined : scale);
 };
 
 /**
@@ -104,7 +116,12 @@ const handleToolbarBorderIntersection = (ev: any, mainHeaderIndex: HeaderIndex, 
  * and show the primary toolbar content. If the toolbars are not intersecting,
  * hide the primary toolbar content and show the scrollable toolbar content
  */
-export const handleToolbarIntersection = (ev: any, mainHeaderIndex: HeaderIndex, scrollHeaderIndex: HeaderIndex, scrollEl: HTMLElement) => {
+export const handleToolbarIntersection = (
+  ev: any, // TODO(FW-2832): type (IntersectionObserverEntry[] triggers errors which should be sorted)
+  mainHeaderIndex: HeaderIndex,
+  scrollHeaderIndex: HeaderIndex,
+  scrollEl: HTMLElement
+) => {
   writeTask(() => {
     const scrollTop = scrollEl.scrollTop;
     handleToolbarBorderIntersection(ev, mainHeaderIndex, scrollTop);
@@ -137,7 +154,8 @@ export const handleToolbarIntersection = (ev: any, mainHeaderIndex: HeaderIndex,
        * only Safari + CSS Animations.
        */
 
-      const hasValidIntersection = (intersection.x === 0 && intersection.y === 0) || (intersection.width !== 0 && intersection.height !== 0);
+      const hasValidIntersection =
+        (intersection.x === 0 && intersection.y === 0) || (intersection.width !== 0 && intersection.height !== 0);
 
       if (hasValidIntersection && scrollTop > 0) {
         setHeaderActive(mainHeaderIndex);
@@ -149,20 +167,26 @@ export const handleToolbarIntersection = (ev: any, mainHeaderIndex: HeaderIndex,
 };
 
 export const setHeaderActive = (headerIndex: HeaderIndex, active = true) => {
+  const headerEl = headerIndex.el;
+
   if (active) {
-    headerIndex.el.classList.remove('header-collapse-condense-inactive');
+    headerEl.classList.remove('header-collapse-condense-inactive');
+    headerEl.removeAttribute('aria-hidden');
   } else {
-    headerIndex.el.classList.add('header-collapse-condense-inactive');
+    headerEl.classList.add('header-collapse-condense-inactive');
+    headerEl.setAttribute('aria-hidden', 'true');
   }
 };
 
 export const scaleLargeTitles = (toolbars: ToolbarIndex[] = [], scale = 1, transition = false) => {
-  toolbars.forEach(toolbar => {
+  toolbars.forEach((toolbar) => {
     const ionTitle = toolbar.ionTitleEl;
     const titleDiv = toolbar.innerTitleEl;
-    if (!ionTitle || ionTitle.size !== 'large') { return; }
+    if (!ionTitle || ionTitle.size !== 'large') {
+      return;
+    }
 
-    titleDiv.style.transition = (transition) ? TRANSITION : '';
+    titleDiv.style.transition = transition ? TRANSITION : '';
     titleDiv.style.transform = `scale3d(${scale}, ${scale}, 1)`;
   });
 };
@@ -171,7 +195,7 @@ export const handleHeaderFade = (scrollEl: HTMLElement, baseEl: HTMLElement, con
   readTask(() => {
     const scrollTop = scrollEl.scrollTop;
     const baseElHeight = baseEl.clientHeight;
-    const fadeStart = (condenseHeader) ? condenseHeader.clientHeight : 0;
+    const fadeStart = condenseHeader ? condenseHeader.clientHeight : 0;
 
     /**
      * If we are using fade header with a condense
@@ -185,7 +209,7 @@ export const handleHeaderFade = (scrollEl: HTMLElement, baseEl: HTMLElement, con
      * using just the condense header the content
      * should overflow out of the container.
      */
-    if ((condenseHeader !== null) && (scrollTop < fadeStart)) {
+    if (condenseHeader !== null && scrollTop < fadeStart) {
       baseEl.style.setProperty('--opacity-scale', '0');
       scrollEl.style.setProperty('clip-path', `inset(${baseElHeight}px 0px 0px 0px)`);
       return;
@@ -193,10 +217,10 @@ export const handleHeaderFade = (scrollEl: HTMLElement, baseEl: HTMLElement, con
 
     const distanceToStart = scrollTop - fadeStart;
     const fadeDuration = 10;
-    const scale = clamp(0, (distanceToStart / fadeDuration), 1);
+    const scale = clamp(0, distanceToStart / fadeDuration, 1);
     writeTask(() => {
       scrollEl.style.removeProperty('clip-path');
       baseEl.style.setProperty('--opacity-scale', scale.toString());
-    })
+    });
   });
-}
+};

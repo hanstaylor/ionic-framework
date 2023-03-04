@@ -1,16 +1,29 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, h } from '@stencil/core';
+import type { ComponentInterface, EventEmitter } from '@stencil/core';
+import { Component, Element, Event, h, Host, Method, Prop } from '@stencil/core';
 
+import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
-import { AnimationBuilder, Color, CssClassMap, OverlayEventDetail, OverlayInterface, ToastButton } from '../../interface';
+import type {
+  AnimationBuilder,
+  Color,
+  CssClassMap,
+  OverlayEventDetail,
+  OverlayInterface,
+  ToastButton,
+} from '../../interface';
+import { printIonWarning } from '../../utils/logging';
 import { dismiss, eventMethod, isCancel, prepareOverlay, present, safeCall } from '../../utils/overlays';
-import { IonicSafeString, sanitizeDOMString } from '../../utils/sanitization';
+import type { IonicSafeString } from '../../utils/sanitization';
+import { sanitizeDOMString } from '../../utils/sanitization';
 import { createColorClasses, getClassMap } from '../../utils/theme';
 
 import { iosEnterAnimation } from './animations/ios.enter';
 import { iosLeaveAnimation } from './animations/ios.leave';
 import { mdEnterAnimation } from './animations/md.enter';
 import { mdLeaveAnimation } from './animations/md.leave';
-import { ToastAttributes } from './toast-interface';
+import type { ToastAttributes, ToastPosition, ToastLayout } from './toast-interface';
+
+// TODO(FW-2832): types
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -25,13 +38,12 @@ import { ToastAttributes } from './toast-interface';
   tag: 'ion-toast',
   styleUrls: {
     ios: 'toast.ios.scss',
-    md: 'toast.md.scss'
+    md: 'toast.md.scss',
   },
-  shadow: true
+  shadow: true,
 })
 export class Toast implements ComponentInterface, OverlayInterface {
-
-  private durationTimeout: any;
+  private durationTimeout?: ReturnType<typeof setTimeout>;
 
   presented = false;
 
@@ -69,12 +81,21 @@ export class Toast implements ComponentInterface, OverlayInterface {
    * How many milliseconds to wait before hiding the toast. By default, it will show
    * until `dismiss()` is called.
    */
-  @Prop() duration = 0;
+  @Prop() duration = config.getNumber('toastDuration', 0);
 
   /**
    * Header to be shown in the toast.
    */
   @Prop() header?: string;
+
+  /**
+   * Defines how the message and buttons are laid out in the toast.
+   * 'baseline': The message and the buttons will appear on the same line.
+   * Message text may wrap within the message container.
+   * 'stacked': The buttons containers and message will stack on top
+   * of each other. Use this if you have long text in your buttons.
+   */
+  @Prop() layout: ToastLayout = 'baseline';
 
   /**
    * Message to be shown in the toast.
@@ -89,7 +110,7 @@ export class Toast implements ComponentInterface, OverlayInterface {
   /**
    * The position of the toast on the screen.
    */
-  @Prop() position: 'top' | 'bottom' | 'middle' = 'bottom';
+  @Prop() position: ToastPosition = 'bottom';
 
   /**
    * An array of buttons for the toast.
@@ -148,7 +169,7 @@ export class Toast implements ComponentInterface, OverlayInterface {
    */
   @Method()
   async present(): Promise<void> {
-    await present(this, 'toastEnter', iosEnterAnimation, mdEnterAnimation, this.position);
+    await present<ToastPresentOptions>(this, 'toastEnter', iosEnterAnimation, mdEnterAnimation, this.position);
 
     if (this.duration > 0) {
       this.durationTimeout = setTimeout(() => this.dismiss(undefined, 'timeout'), this.duration);
@@ -169,7 +190,15 @@ export class Toast implements ComponentInterface, OverlayInterface {
     if (this.durationTimeout) {
       clearTimeout(this.durationTimeout);
     }
-    return dismiss(this, data, role, 'toastLeave', iosLeaveAnimation, mdLeaveAnimation, this.position);
+    return dismiss<ToastDismissOptions>(
+      this,
+      data,
+      role,
+      'toastLeave',
+      iosLeaveAnimation,
+      mdLeaveAnimation,
+      this.position
+    );
   }
 
   /**
@@ -190,11 +219,9 @@ export class Toast implements ComponentInterface, OverlayInterface {
 
   private getButtons(): ToastButton[] {
     const buttons = this.buttons
-      ? this.buttons.map(b => {
-        return (typeof b === 'string')
-          ? { text: b }
-          : b;
-      })
+      ? this.buttons.map((b) => {
+          return typeof b === 'string' ? { text: b } : b;
+        })
       : [];
 
     return buttons;
@@ -213,7 +240,7 @@ export class Toast implements ComponentInterface, OverlayInterface {
   }
 
   private async callButtonHandler(button: ToastButton | undefined) {
-    if (button && button.handler) {
+    if (button?.handler) {
       // a handler has been provided, execute it
       // pass the handler the values from the inputs
       try {
@@ -232,10 +259,10 @@ export class Toast implements ComponentInterface, OverlayInterface {
   private dispatchCancelHandler = (ev: CustomEvent) => {
     const role = ev.detail.role;
     if (isCancel(role)) {
-      const cancelButton = this.getButtons().find(b => b.role === 'cancel');
+      const cancelButton = this.getButtons().find((b) => b.role === 'cancel');
       this.callButtonHandler(cancelButton);
     }
-  }
+  };
 
   renderButtons(buttons: ToastButton[], side: 'start' | 'end') {
     if (buttons.length === 0) {
@@ -245,38 +272,56 @@ export class Toast implements ComponentInterface, OverlayInterface {
     const mode = getIonMode(this);
     const buttonGroupsClasses = {
       'toast-button-group': true,
-      [`toast-button-group-${side}`]: true
+      [`toast-button-group-${side}`]: true,
     };
     return (
       <div class={buttonGroupsClasses}>
-        {buttons.map(b =>
+        {buttons.map((b) => (
           <button type="button" class={buttonClass(b)} tabIndex={0} onClick={() => this.buttonClick(b)} part="button">
             <div class="toast-button-inner">
-              {b.icon &&
+              {b.icon && (
                 <ion-icon
                   icon={b.icon}
                   slot={b.text === undefined ? 'icon-only' : undefined}
                   class="toast-button-icon"
-                />}
+                />
+              )}
               {b.text}
             </div>
-            {mode === 'md' && <ion-ripple-effect type={b.icon !== undefined && b.text === undefined ? 'unbounded' : 'bounded'}></ion-ripple-effect>}
+            {mode === 'md' && (
+              <ion-ripple-effect
+                type={b.icon !== undefined && b.text === undefined ? 'unbounded' : 'bounded'}
+              ></ion-ripple-effect>
+            )}
           </button>
-        )}
+        ))}
       </div>
     );
   }
 
   render() {
+    const { layout, el } = this;
     const allButtons = this.getButtons();
-    const startButtons = allButtons.filter(b => b.side === 'start');
-    const endButtons = allButtons.filter(b => b.side !== 'start');
+    const startButtons = allButtons.filter((b) => b.side === 'start');
+    const endButtons = allButtons.filter((b) => b.side !== 'start');
     const mode = getIonMode(this);
     const wrapperClass = {
       'toast-wrapper': true,
-      [`toast-${this.position}`]: true
+      [`toast-${this.position}`]: true,
+      [`toast-layout-${layout}`]: true,
     };
     const role = allButtons.length > 0 ? 'dialog' : 'status';
+
+    /**
+     * Stacked buttons are only meant to be
+     *  used with one type of button.
+     */
+    if (layout === 'stacked' && startButtons.length > 0 && endButtons.length > 0) {
+      printIonWarning(
+        'This toast is using start and end buttons with the stacked toast layout. We recommend following the best practice of using either start or end buttons with the stacked toast layout.',
+        el
+      );
+    }
 
     return (
       <Host
@@ -284,7 +329,7 @@ export class Toast implements ComponentInterface, OverlayInterface {
         aria-atomic="true"
         role={role}
         tabindex="-1"
-        {...this.htmlAttributes as any}
+        {...(this.htmlAttributes as any)}
         style={{
           zIndex: `${60000 + this.overlayIndex}`,
         }}
@@ -292,7 +337,7 @@ export class Toast implements ComponentInterface, OverlayInterface {
           [mode]: true,
           ...getClassMap(this.cssClass),
           'overlay-hidden': true,
-          'toast-translucent': this.translucent
+          'toast-translucent': this.translucent,
         })}
         onIonToastWillDismiss={this.dispatchCancelHandler}
       >
@@ -300,17 +345,19 @@ export class Toast implements ComponentInterface, OverlayInterface {
           <div class="toast-container" part="container">
             {this.renderButtons(startButtons, 'start')}
 
-            {this.icon !== undefined &&
+            {this.icon !== undefined && (
               <ion-icon class="toast-icon" part="icon" icon={this.icon} lazy={false} aria-hidden="true"></ion-icon>
-            }
+            )}
 
             <div class="toast-content">
-              {this.header !== undefined &&
-                <div class="toast-header" part="header">{this.header}</div>
-              }
-              {this.message !== undefined &&
+              {this.header !== undefined && (
+                <div class="toast-header" part="header">
+                  {this.header}
+                </div>
+              )}
+              {this.message !== undefined && (
                 <div class="toast-message" part="message" innerHTML={sanitizeDOMString(this.message)}></div>
-              }
+              )}
             </div>
 
             {this.renderButtons(endButtons, 'end')}
@@ -328,6 +375,9 @@ const buttonClass = (button: ToastButton): CssClassMap => {
     [`toast-button-${button.role}`]: button.role !== undefined,
     'ion-focusable': true,
     'ion-activatable': true,
-    ...getClassMap(button.cssClass)
+    ...getClassMap(button.cssClass),
   };
 };
+
+type ToastPresentOptions = ToastPosition;
+type ToastDismissOptions = ToastPosition;

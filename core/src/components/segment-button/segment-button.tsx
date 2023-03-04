@@ -1,9 +1,11 @@
-import { Component, ComponentInterface, Element, Host, Prop, State, forceUpdate, h } from '@stencil/core';
+import type { ComponentInterface } from '@stencil/core';
+import { Component, Element, Host, Prop, Method, State, forceUpdate, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
-import { SegmentButtonLayout } from '../../interface';
-import { ButtonInterface } from '../../utils/element-interface';
-import { addEventListener, removeEventListener } from '../../utils/helpers';
+import type { SegmentButtonLayout } from '../../interface';
+import type { ButtonInterface } from '../../utils/element-interface';
+import type { Attributes } from '../../utils/helpers';
+import { addEventListener, removeEventListener, inheritAttributes } from '../../utils/helpers';
 import { hostContext } from '../../utils/theme';
 
 let ids = 0;
@@ -19,12 +21,14 @@ let ids = 0;
   tag: 'ion-segment-button',
   styleUrls: {
     ios: 'segment-button.ios.scss',
-    md: 'segment-button.md.scss'
+    md: 'segment-button.md.scss',
   },
-  shadow: true
+  shadow: true,
 })
 export class SegmentButton implements ComponentInterface, ButtonInterface {
   private segmentEl: HTMLIonSegmentElement | null = null;
+  private nativeEl: HTMLButtonElement | undefined;
+  private inheritedAttributes: Attributes = {};
 
   @Element() el!: HTMLElement;
 
@@ -48,10 +52,10 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
   /**
    * The value of the segment button.
    */
-  @Prop() value: string = 'ion-sb-' + (ids++);
+  @Prop() value: string = 'ion-sb-' + ids++;
 
   connectedCallback() {
-    const segmentEl = this.segmentEl = this.el.closest('ion-segment');
+    const segmentEl = (this.segmentEl = this.el.closest('ion-segment'));
     if (segmentEl) {
       this.updateState();
       addEventListener(segmentEl, 'ionSelect', this.updateState);
@@ -68,6 +72,12 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
     }
   }
 
+  componentWillLoad() {
+    this.inheritedAttributes = {
+      ...inheritAttributes(this.el, ['aria-label']),
+    };
+  }
+
   private get hasLabel() {
     return !!this.el.querySelector('ion-label');
   }
@@ -78,28 +88,34 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
 
   private updateStyle = () => {
     forceUpdate(this);
-  }
+  };
 
   private updateState = () => {
     if (this.segmentEl) {
       this.checked = this.segmentEl.value === this.value;
     }
-  }
+  };
 
-  private get tabIndex() {
-    return this.checked && !this.disabled ? 0 : -1;
+  /**
+   * @internal
+   * Focuses the native <button> element
+   * inside of ion-segment-button.
+   */
+  @Method()
+  async setFocus() {
+    const { nativeEl } = this;
+
+    if (nativeEl !== undefined) {
+      nativeEl.focus();
+    }
   }
 
   render() {
-    const { checked, type, disabled, hasIcon, hasLabel, layout, segmentEl, tabIndex } = this;
+    const { checked, type, disabled, hasIcon, hasLabel, layout, segmentEl } = this;
     const mode = getIonMode(this);
-    const hasSegmentColor = () => segmentEl !== null && segmentEl.color !== undefined;
+    const hasSegmentColor = () => segmentEl?.color !== undefined;
     return (
       <Host
-        role="tab"
-        aria-selected={checked ? 'true' : 'false'}
-        aria-disabled={disabled ? 'true' : null}
-        tabIndex={tabIndex}
         class={{
           [mode]: true,
           'in-toolbar': hostContext('ion-toolbar', this.el),
@@ -119,11 +135,14 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
         }}
       >
         <button
+          aria-selected={checked ? 'true' : 'false'}
+          role="tab"
+          ref={(el) => (this.nativeEl = el)}
           type={type}
-          tabIndex={-1}
           class="button-native"
           part="native"
           disabled={disabled}
+          {...this.inheritedAttributes}
         >
           <span class="button-inner">
             <slot></slot>
@@ -134,12 +153,11 @@ export class SegmentButton implements ComponentInterface, ButtonInterface {
           part="indicator"
           class={{
             'segment-button-indicator': true,
-            'segment-button-indicator-animated': true
+            'segment-button-indicator-animated': true,
           }}
         >
           <div part="indicator-background" class="segment-button-indicator-background"></div>
         </div>
-
       </Host>
     );
   }

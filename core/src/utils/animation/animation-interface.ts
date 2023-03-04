@@ -1,3 +1,5 @@
+// TODO(FW-2832): types
+
 export interface Animation {
   parentAnimation: Animation | undefined;
   elements: HTMLElement[];
@@ -212,6 +214,12 @@ export interface Animation {
    * upon the animation ending
    */
   onFinish(callback: AnimationLifecycle, opts?: AnimationCallbackOptions): Animation;
+
+  /**
+   * Returns `true` if the animation is running.
+   * Returns `false` otherwise.
+   */
+  isRunning(): boolean;
 }
 
 export type AnimationLifecycle = (currentStep: 0 | 1, animation: Animation) => void;

@@ -1,9 +1,24 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, State, Watch, h } from '@stencil/core';
+import type { ComponentInterface, EventEmitter } from '@stencil/core';
+import { Component, Element, Event, Host, Method, Prop, State, Watch, h } from '@stencil/core';
 
 import { getIonMode } from '../../global/ionic-global';
-import { AnimationBuilder, ComponentProps, ComponentRef, FrameworkDelegate, OverlayEventDetail, PopoverAttributes, PopoverInterface, PopoverSize, PositionAlign, PositionReference, PositionSide, TriggerAction } from '../../interface';
+import type {
+  AnimationBuilder,
+  ComponentProps,
+  ComponentRef,
+  FrameworkDelegate,
+  OverlayEventDetail,
+  PopoverAttributes,
+  PopoverInterface,
+  PopoverSize,
+  PositionAlign,
+  PositionReference,
+  PositionSide,
+  TriggerAction,
+} from '../../interface';
 import { CoreDelegate, attachComponent, detachComponent } from '../../utils/framework-delegate';
 import { addEventListener, raf } from '../../utils/helpers';
+import { printIonWarning } from '../../utils/logging';
 import { BACKDROP, dismiss, eventMethod, focusFirstDescendant, prepareOverlay, present } from '../../utils/overlays';
 import { isPlatform } from '../../utils/platform';
 import { getClassMap } from '../../utils/theme';
@@ -14,6 +29,8 @@ import { iosLeaveAnimation } from './animations/ios.leave';
 import { mdEnterAnimation } from './animations/md.enter';
 import { mdLeaveAnimation } from './animations/md.leave';
 import { configureDismissInteraction, configureKeyboardInteraction, configureTriggerInteraction } from './utils';
+
+// TODO(FW-2832): types
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -28,12 +45,11 @@ import { configureDismissInteraction, configureKeyboardInteraction, configureTri
   tag: 'ion-popover',
   styleUrls: {
     ios: 'popover.ios.scss',
-    md: 'popover.md.scss'
+    md: 'popover.md.scss',
   },
-  shadow: true
+  shadow: true,
 })
 export class Popover implements ComponentInterface, PopoverInterface {
-
   private usersElement?: HTMLElement;
   private triggerEl?: HTMLElement | null;
   private parentPopover: HTMLIonPopoverElement | null = null;
@@ -115,6 +131,10 @@ export class Popover implements ComponentInterface, PopoverInterface {
 
   /**
    * If `true`, a backdrop will be displayed behind the popover.
+   * This property controls whether or not the backdrop
+   * darkens the screen when the popover is presented.
+   * It does not control whether or not the backdrop
+   * is active or present in the DOM.
    */
   @Prop() showBackdrop = true;
 
@@ -194,9 +214,8 @@ export class Popover implements ComponentInterface, PopoverInterface {
   @Prop({ mutable: true }) alignment?: PositionAlign;
 
   /**
-   * If `true`, the popover will display an arrow
-   * that points at the `reference` when running in `ios` mode
-   * on mobile. Does not apply in `md` mode or on desktop.
+   * If `true`, the popover will display an arrow that points at the
+   * `reference` when running in `ios` mode. Does not apply in `md` mode.
    */
   @Prop() arrow = true;
 
@@ -236,6 +255,19 @@ export class Popover implements ComponentInterface, PopoverInterface {
       this.dismiss();
     }
   }
+
+  /**
+   * If `true`, the component passed into `ion-popover` will
+   * automatically be mounted when the popover is created. The
+   * component will remain mounted even when the popover is dismissed.
+   * However, the component will be destroyed when the popover is
+   * destroyed. This property is not reactive and should only be
+   * used when initially creating a popover.
+   *
+   * Note: This feature only applies to inline popovers in JavaScript
+   * frameworks such as Angular, React, and Vue.
+   */
+  @Prop() keepContentsMounted = false;
 
   /**
    * Emitted after the popover has presented.
@@ -281,8 +313,32 @@ export class Popover implements ComponentInterface, PopoverInterface {
    */
   @Event({ eventName: 'didDismiss' }) didDismissShorthand!: EventEmitter<OverlayEventDetail>;
 
+  /**
+   * Emitted before the popover has presented, but after the component
+   * has been mounted in the DOM.
+   * This event exists for ion-popover to resolve an issue with the
+   * popover and the lazy build, that the transition is unable to get
+   * the correct dimensions of the popover with auto sizing.
+   * This is not required for other overlays, since the existing
+   * overlay transitions are not effected by auto sizing content.
+   *
+   * @internal
+   */
+  @Event() ionMount!: EventEmitter<void>;
+
   connectedCallback() {
-    prepareOverlay(this.el);
+    const { configureTriggerInteraction, el } = this;
+
+    prepareOverlay(el);
+    configureTriggerInteraction();
+  }
+
+  disconnectedCallback() {
+    const { destroyTriggerInteraction } = this;
+
+    if (destroyTriggerInteraction) {
+      destroyTriggerInteraction();
+    }
   }
 
   componentWillLoad() {
@@ -290,7 +346,7 @@ export class Popover implements ComponentInterface, PopoverInterface {
      * If user has custom ID set then we should
      * not assign the default incrementing ID.
      */
-    this.popoverId = (this.el.hasAttribute('id')) ? this.el.getAttribute('id')! : `ion-popover-${this.popoverIndex}`;
+    this.popoverId = this.el.hasAttribute('id') ? this.el.getAttribute('id')! : `ion-popover-${this.popoverIndex}`;
 
     this.parentPopover = this.el.closest(`ion-popover:not(#${this.popoverId})`) as HTMLIonPopoverElement | null;
 
@@ -315,8 +371,6 @@ export class Popover implements ComponentInterface, PopoverInterface {
         this.dismiss(undefined, undefined, false);
       });
     }
-
-    this.configureTriggerInteraction();
   }
 
   /**
@@ -350,8 +404,8 @@ export class Popover implements ComponentInterface, PopoverInterface {
     if (this.workingDelegate && !force) {
       return {
         delegate: this.workingDelegate,
-        inline: this.inline
-      }
+        inline: this.inline,
+      };
     }
 
     /**
@@ -364,10 +418,10 @@ export class Popover implements ComponentInterface, PopoverInterface {
      * correct place.
      */
     const parentEl = this.el.parentNode as HTMLElement | null;
-    const inline = this.inline = parentEl !== null && !this.hasController;
-    const delegate = this.workingDelegate = (inline) ? this.delegate || this.coreDelegate : this.delegate
+    const inline = (this.inline = parentEl !== null && !this.hasController);
+    const delegate = (this.workingDelegate = inline ? this.delegate || this.coreDelegate : this.delegate);
 
-    return { inline, delegate }
+    return { inline, delegate };
   }
 
   /**
@@ -394,13 +448,15 @@ export class Popover implements ComponentInterface, PopoverInterface {
       await this.currentTransition;
     }
 
-    const data = {
-      ...this.componentProps,
-      popover: this.el
-    };
-
     const { inline, delegate } = this.getDelegate(true);
-    this.usersElement = await attachComponent(delegate, this.el, this.component, ['popover-viewport'], data, inline);
+    this.usersElement = await attachComponent(
+      delegate,
+      this.el,
+      this.component,
+      ['popover-viewport'],
+      this.componentProps,
+      inline
+    );
     await deepReady(this.usersElement);
 
     if (!this.keyboardEvents) {
@@ -408,28 +464,54 @@ export class Popover implements ComponentInterface, PopoverInterface {
     }
     this.configureDismissInteraction();
 
-    this.currentTransition = present(this, 'popoverEnter', iosEnterAnimation, mdEnterAnimation, {
-      event: event || this.event,
-      size: this.size,
-      trigger: this.triggerEl,
-      reference: this.reference,
-      side: this.side,
-      align: this.alignment
+    this.ionMount.emit();
+
+    return new Promise((resolve) => {
+      /**
+       * Wait two request animation frame loops before presenting the popover.
+       * This allows the framework implementations enough time to mount
+       * the popover contents, so the bounding box is set when the popover
+       * transition starts.
+       *
+       * On Angular and React, a single raf is enough time, but for Vue
+       * we need to wait two rafs. As a result we are using two rafs for
+       * all frameworks to ensure the popover is presented correctly.
+       */
+      raf(() => {
+        raf(async () => {
+          this.currentTransition = present<PopoverPresentOptions>(
+            this,
+            'popoverEnter',
+            iosEnterAnimation,
+            mdEnterAnimation,
+            {
+              event: event || this.event,
+              size: this.size,
+              trigger: this.triggerEl,
+              reference: this.reference,
+              side: this.side,
+              align: this.alignment,
+            }
+          );
+
+          await this.currentTransition;
+
+          this.currentTransition = undefined;
+
+          /**
+           * If popover is nested and was
+           * presented using the "Right" arrow key,
+           * we need to move focus to the first
+           * descendant inside of the popover.
+           */
+          if (this.focusDescendantOnPresent) {
+            focusFirstDescendant(this.el, this.el);
+          }
+
+          resolve();
+        });
+      });
     });
-
-    await this.currentTransition;
-
-    this.currentTransition = undefined;
-
-    /**
-     * If popover is nested and was
-     * presented using the "Right" arrow key,
-     * we need to move focus to the first
-     * descendant inside of the popover.
-     */
-    if (this.focusDescendantOnPresent) {
-      focusFirstDescendant(this.el, this.el);
-    }
   }
 
   /**
@@ -456,10 +538,18 @@ export class Popover implements ComponentInterface, PopoverInterface {
 
     const { destroyKeyboardInteraction, destroyDismissInteraction } = this;
     if (dismissParentPopover && this.parentPopover) {
-      this.parentPopover.dismiss(data, role, dismissParentPopover)
+      this.parentPopover.dismiss(data, role, dismissParentPopover);
     }
 
-    this.currentTransition = dismiss(this, data, role, 'popoverLeave', iosLeaveAnimation, mdLeaveAnimation, this.event);
+    this.currentTransition = dismiss<PopoverDismissOptions>(
+      this,
+      data,
+      role,
+      'popoverLeave',
+      iosLeaveAnimation,
+      mdLeaveAnimation,
+      this.event
+    );
     const shouldDismiss = await this.currentTransition;
     if (shouldDismiss) {
       if (destroyKeyboardInteraction) {
@@ -509,16 +599,9 @@ export class Popover implements ComponentInterface, PopoverInterface {
     return eventMethod(this.el, 'ionPopoverWillDismiss');
   }
 
-  private onDismiss = (ev: UIEvent) => {
-    ev.stopPropagation();
-    ev.preventDefault();
-
-    this.dismiss();
-  }
-
   private onBackdropTap = () => {
     this.dismiss(undefined, BACKDROP);
-  }
+  };
 
   private onLifecycle = (modalEvent: CustomEvent) => {
     const el = this.usersElement;
@@ -527,11 +610,11 @@ export class Popover implements ComponentInterface, PopoverInterface {
       const event = new CustomEvent(name, {
         bubbles: false,
         cancelable: false,
-        detail: modalEvent.detail
+        detail: modalEvent.detail,
       });
       el.dispatchEvent(event);
     }
-  }
+  };
 
   private configureTriggerInteraction = () => {
     const { trigger, triggerAction, el, destroyTriggerInteraction } = this;
@@ -540,11 +623,21 @@ export class Popover implements ComponentInterface, PopoverInterface {
       destroyTriggerInteraction();
     }
 
-    const triggerEl = this.triggerEl = (trigger !== undefined) ? document.getElementById(trigger) : null;
-    if (!triggerEl) { return; }
+    if (trigger === undefined) {
+      return;
+    }
+
+    const triggerEl = (this.triggerEl = trigger !== undefined ? document.getElementById(trigger) : null);
+    if (!triggerEl) {
+      printIonWarning(
+        `A trigger element with the ID "${trigger}" was not found in the DOM. The trigger element must be in the DOM when the "trigger" property is set on ion-popover.`,
+        this.el
+      );
+      return;
+    }
 
     this.destroyTriggerInteraction = configureTriggerInteraction(triggerEl, triggerAction, el);
-  }
+  };
 
   private configureKeyboardInteraction = () => {
     const { destroyKeyboardInteraction, el } = this;
@@ -554,32 +647,34 @@ export class Popover implements ComponentInterface, PopoverInterface {
     }
 
     this.destroyKeyboardInteraction = configureKeyboardInteraction(el);
-  }
+  };
 
   private configureDismissInteraction = () => {
     const { destroyDismissInteraction, parentPopover, triggerAction, triggerEl, el } = this;
 
-    if (!parentPopover || !triggerEl) { return; }
+    if (!parentPopover || !triggerEl) {
+      return;
+    }
 
     if (destroyDismissInteraction) {
       destroyDismissInteraction();
     }
 
     this.destroyDismissInteraction = configureDismissInteraction(triggerEl, triggerAction, el, parentPopover);
-  }
+  };
 
   render() {
     const mode = getIonMode(this);
     const { onLifecycle, popoverId, parentPopover, dismissOnSelect, side, arrow, htmlAttributes } = this;
     const desktop = isPlatform('desktop');
-    const enableArrow = arrow && !parentPopover && !desktop;
+    const enableArrow = arrow && !parentPopover;
 
     return (
       <Host
         aria-modal="true"
         no-router
         tabindex="-1"
-        {...htmlAttributes as any}
+        {...(htmlAttributes as any)}
         style={{
           zIndex: `${20000 + this.overlayIndex}`,
         }}
@@ -591,21 +686,17 @@ export class Popover implements ComponentInterface, PopoverInterface {
           'overlay-hidden': true,
           'popover-desktop': desktop,
           [`popover-side-${side}`]: true,
-          'popover-nested': !!parentPopover
+          'popover-nested': !!parentPopover,
         }}
         onIonPopoverDidPresent={onLifecycle}
         onIonPopoverWillPresent={onLifecycle}
         onIonPopoverWillDismiss={onLifecycle}
         onIonPopoverDidDismiss={onLifecycle}
-        onIonDismiss={this.onDismiss}
         onIonBackdropTap={this.onBackdropTap}
       >
         {!parentPopover && <ion-backdrop tappable={this.backdropDismiss} visible={this.showBackdrop} part="backdrop" />}
 
-        <div
-          class="popover-wrapper ion-overlay-wrapper"
-          onClick={dismissOnSelect ? () => this.dismiss() : undefined}
-        >
+        <div class="popover-wrapper ion-overlay-wrapper" onClick={dismissOnSelect ? () => this.dismiss() : undefined}>
           {enableArrow && <div class="popover-arrow" part="arrow"></div>}
           <div class="popover-content" part="content">
             <slot></slot>
@@ -617,10 +708,39 @@ export class Popover implements ComponentInterface, PopoverInterface {
 }
 
 const LIFECYCLE_MAP: any = {
-  'ionPopoverDidPresent': 'ionViewDidEnter',
-  'ionPopoverWillPresent': 'ionViewWillEnter',
-  'ionPopoverWillDismiss': 'ionViewWillLeave',
-  'ionPopoverDidDismiss': 'ionViewDidLeave',
+  ionPopoverDidPresent: 'ionViewDidEnter',
+  ionPopoverWillPresent: 'ionViewWillEnter',
+  ionPopoverWillDismiss: 'ionViewWillLeave',
+  ionPopoverDidDismiss: 'ionViewDidLeave',
 };
 
 let popoverIds = 0;
+
+interface PopoverPresentOptions {
+  /**
+   * The original target event that presented the popover.
+   */
+  event: Event;
+  /**
+   * Describes how to calculate the popover width.
+   */
+  size: PopoverSize;
+  /**
+   * The element that causes the popover to open.
+   */
+  trigger?: HTMLElement | null;
+  /**
+   * Describes what to position the popover relative to.
+   */
+  reference: PositionReference;
+  /**
+   * Side of the `reference` point to position the popover on.
+   */
+  side: PositionSide;
+  /**
+   * Describes how to align the popover content with the `reference` point.
+   */
+  align?: PositionAlign;
+}
+
+type PopoverDismissOptions = Event;

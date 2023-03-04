@@ -1,8 +1,8 @@
-import { AnimationBuilder } from '@ionic/core/components';
-import React, { useContext } from 'react';
+import type { AnimationBuilder } from '@ionic/core/components';
+import React, { useContext, useMemo } from 'react';
 
-import { RouteAction, RouterDirection, RouterOptions } from '../models';
-import { RouteInfo } from '../models/RouteInfo';
+import type { RouteAction, RouterDirection, RouterOptions } from '../models';
+import type { RouteInfo } from '../models/RouteInfo';
 
 export interface IonRouterContextState {
   routeInfo: RouteInfo;
@@ -19,7 +19,7 @@ export interface IonRouterContextState {
 }
 
 export const IonRouterContext = React.createContext<IonRouterContextState>({
-  routeInfo: undefined as any,
+  routeInfo: undefined as any, // TODO(FW-2959): type
   push: () => {
     throw new Error('An Ionic Router is required for IonRouterContext');
   },
@@ -39,13 +39,17 @@ export const IonRouterContext = React.createContext<IonRouterContextState>({
  */
 export function useIonRouter(): UseIonRouterResult {
   const context = useContext(IonRouterContext);
-  return {
-    back: context.back,
-    push: context.push,
-    goBack: context.back,
-    canGoBack: context.canGoBack,
-    routeInfo: context.routeInfo,
-  };
+
+  return useMemo(
+    () => ({
+      back: context.back,
+      push: context.push,
+      goBack: context.back,
+      canGoBack: context.canGoBack,
+      routeInfo: context.routeInfo,
+    }),
+    [context.back, context.push, context.canGoBack, context.routeInfo]
+  );
 }
 
 export type UseIonRouterResult = {

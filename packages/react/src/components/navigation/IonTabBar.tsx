@@ -1,9 +1,9 @@
-import { JSX as LocalJSX } from '@ionic/core/components';
+import type { JSX as LocalJSX } from '@ionic/core/components';
 import React, { useContext } from 'react';
 
 import { NavContext } from '../../contexts/NavContext';
-import { RouteInfo } from '../../models';
-import { IonicReactProps } from '../IonicReactProps';
+import type { RouteInfo } from '../../models';
+import type { IonicReactProps } from '../IonicReactProps';
 import { IonTabBarInner } from '../inner-proxies';
 import { createForwardRef } from '../utils';
 
@@ -35,6 +35,8 @@ interface IonTabBarState {
   tabs: { [key: string]: TabUrls };
 }
 
+// TODO(FW-2959): types
+
 class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarState> {
   context!: React.ContextType<typeof NavContext>;
 
@@ -52,13 +54,9 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
           originalHref: child.props.href,
           currentHref: child.props.href,
           originalRouteOptions:
-            child.props.href === props.routeInfo?.pathname
-              ? props.routeInfo?.routeOptions
-              : undefined,
+            child.props.href === props.routeInfo?.pathname ? props.routeInfo?.routeOptions : undefined,
           currentRouteOptions:
-            child.props.href === props.routeInfo?.pathname
-              ? props.routeInfo?.routeOptions
-              : undefined,
+            child.props.href === props.routeInfo?.pathname ? props.routeInfo?.routeOptions : undefined,
         };
       }
     });
@@ -94,6 +92,7 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
     }
   }
 
+  // eslint-disable-next-line
   setActiveTabOnContext = (_tab: string) => {};
 
   selectTab(tab: string) {
@@ -178,12 +177,22 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
   }
 
   private onTabButtonClick(
-    e: CustomEvent<{ href: string; selected: boolean; tab: string; routeOptions: unknown }>
+    e: CustomEvent<{ href: string; selected: boolean; tab: string; routeOptions: unknown }>,
+    onClickFn?: (e: any) => void
   ) {
     const tappedTab = this.state.tabs[e.detail.tab];
     const originalHref = tappedTab.originalHref;
     const currentHref = e.detail.href;
     const { activeTab: prevActiveTab } = this.state;
+
+    if (onClickFn) {
+      /**
+       * If the user provides an onClick function, we call it
+       * with the original event.
+       */
+      onClickFn(e);
+    }
+
     // this.props.onSetCurrentTab(e.detail.tab, this.props.routeInfo);
     // Clicking the current tab will bring you back to the original href
     if (prevActiveTab === e.detail.tab) {
@@ -192,14 +201,10 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
       }
     } else {
       if (this.props.onIonTabsWillChange) {
-        this.props.onIonTabsWillChange(
-          new CustomEvent('ionTabWillChange', { detail: { tab: e.detail.tab } })
-        );
+        this.props.onIonTabsWillChange(new CustomEvent('ionTabWillChange', { detail: { tab: e.detail.tab } }));
       }
       if (this.props.onIonTabsDidChange) {
-        this.props.onIonTabsDidChange(
-          new CustomEvent('ionTabDidChange', { detail: { tab: e.detail.tab } })
-        );
+        this.props.onIonTabsDidChange(new CustomEvent('ionTabDidChange', { detail: { tab: e.detail.tab } }));
       }
       this.setActiveTabOnContext(e.detail.tab);
       this.context.changeTab(e.detail.tab, currentHref, e.detail.routeOptions);
@@ -209,17 +214,11 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
   private renderTabButton(activeTab: string | null | undefined) {
     return (
       child:
-        | React.ReactElement<
-            LocalJSX.IonTabButton & { onClick: (e: any) => void; routeOptions?: unknown }
-          >
+        | React.ReactElement<LocalJSX.IonTabButton & { onClick: (e: any) => void; routeOptions?: unknown }>
         | null
         | undefined
     ) => {
-      if (
-        child != null &&
-        child.props &&
-        (child.type === IonTabButton || (child as any).type.isTabButton)
-      ) {
+      if (child != null && child.props && (child.type === IonTabButton || (child as any).type.isTabButton)) {
         const href =
           child.props.tab === activeTab
             ? this.props.routeInfo?.pathname
@@ -232,7 +231,7 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
         return React.cloneElement(child, {
           href,
           routeOptions,
-          onClick: this.onTabButtonClick,
+          onClick: (ev: CustomEvent) => this.onTabButtonClick(ev, child.props.onClick),
         });
       }
       return null;
@@ -253,23 +252,18 @@ class IonTabBarUnwrapped extends React.PureComponent<InternalProps, IonTabBarSta
   }
 }
 
-const IonTabBarContainer: React.FC<InternalProps> = React.memo<InternalProps>(
-  ({ forwardedRef, ...props }) => {
-    const context = useContext(NavContext);
-    return (
-      <IonTabBarUnwrapped
-        ref={forwardedRef}
-        {...(props as any)}
-        routeInfo={props.routeInfo || context.routeInfo || { pathname: window.location.pathname }}
-        onSetCurrentTab={context.setCurrentTab}
-      >
-        {props.children}
-      </IonTabBarUnwrapped>
-    );
-  }
-);
+const IonTabBarContainer: React.FC<InternalProps> = React.memo<InternalProps>(({ forwardedRef, ...props }) => {
+  const context = useContext(NavContext);
+  return (
+    <IonTabBarUnwrapped
+      ref={forwardedRef}
+      {...(props as any)}
+      routeInfo={props.routeInfo || context.routeInfo || { pathname: window.location.pathname }}
+      onSetCurrentTab={context.setCurrentTab}
+    >
+      {props.children}
+    </IonTabBarUnwrapped>
+  );
+});
 
-export const IonTabBar = createForwardRef<IonTabBarProps, HTMLIonTabBarElement>(
-  IonTabBarContainer,
-  'IonTabBar'
-);
+export const IonTabBar = createForwardRef<IonTabBarProps, HTMLIonTabBarElement>(IonTabBarContainer, 'IonTabBar');

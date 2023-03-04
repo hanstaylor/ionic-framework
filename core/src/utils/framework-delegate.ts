@@ -1,6 +1,8 @@
-import { ComponentRef, FrameworkDelegate } from '../interface';
+import type { ComponentRef, FrameworkDelegate } from '../interface';
 
 import { componentOnReady } from './helpers';
+
+// TODO(FW-2832): types
 
 export const attachComponent = async (
   delegate: FrameworkDelegate | undefined,
@@ -17,12 +19,10 @@ export const attachComponent = async (
     throw new Error('framework delegate is missing');
   }
 
-  const el: any = (typeof component === 'string')
-    ? container.ownerDocument && container.ownerDocument.createElement(component)
-    : component;
+  const el: any = typeof component === 'string' ? container.ownerDocument?.createElement(component) : component;
 
   if (cssClasses) {
-    cssClasses.forEach(c => el.classList.add(c));
+    cssClasses.forEach((c) => el.classList.add(c));
   }
   if (componentProps) {
     Object.assign(el, componentProps);
@@ -30,7 +30,7 @@ export const attachComponent = async (
 
   container.appendChild(el);
 
-  await new Promise(resolve => componentOnReady(el, resolve));
+  await new Promise((resolve) => componentOnReady(el, resolve));
 
   return el;
 };
@@ -66,15 +66,14 @@ export const CoreDelegate = () => {
        * the element otherwise just get a reference
        * to the component.
        */
-      const el: any = (typeof userComponent === 'string')
-        ? BaseComponent.ownerDocument && BaseComponent.ownerDocument.createElement(userComponent)
-        : userComponent;
+      const el: any =
+        typeof userComponent === 'string' ? BaseComponent.ownerDocument?.createElement(userComponent) : userComponent;
 
       /**
        * Add any css classes passed in
        * via the cssClasses prop on the overlay.
        */
-      cssClasses.forEach(c => el.classList.add(c));
+      cssClasses.forEach((c) => el.classList.add(c));
 
       /**
        * Add any props passed in
@@ -88,16 +87,24 @@ export const CoreDelegate = () => {
        */
       BaseComponent.appendChild(el);
 
-      await new Promise(resolve => componentOnReady(el, resolve));
+      await new Promise((resolve) => componentOnReady(el, resolve));
     } else if (BaseComponent.children.length > 0) {
-      // If there is no component, then we need to create a new parent
-      // element to apply the css classes to.
-      const el = BaseComponent.ownerDocument && BaseComponent.ownerDocument.createElement('div');
-      cssClasses.forEach(c => el.classList.add(c));
-      // Move each child from the original template to the new parent element.
-      el.append(...BaseComponent.children);
-      // Append the new parent element to the original parent element.
-      BaseComponent.appendChild(el);
+      const root = BaseComponent.children[0] as HTMLElement;
+      if (!root.classList.contains('ion-delegate-host')) {
+        /**
+         * If the root element is not a delegate host, it means
+         * that the overlay has not been presented yet and we need
+         * to create the containing element with the specified classes.
+         */
+        const el = BaseComponent.ownerDocument?.createElement('div');
+        // Add a class to track if the root element was created by the delegate.
+        el.classList.add('ion-delegate-host');
+        cssClasses.forEach((c) => el.classList.add(c));
+        // Move each child from the original template to the new parent element.
+        el.append(...BaseComponent.children);
+        // Append the new parent element to the original parent element.
+        BaseComponent.appendChild(el);
+      }
     }
 
     /**
@@ -117,7 +124,7 @@ export const CoreDelegate = () => {
     app.appendChild(BaseComponent);
 
     return BaseComponent;
-  }
+  };
 
   const removeViewFromDom = () => {
     /**
@@ -128,7 +135,7 @@ export const CoreDelegate = () => {
       Reference.remove();
     }
     return Promise.resolve();
-  }
+  };
 
-  return { attachViewToDom, removeViewFromDom }
-}
+  return { attachViewToDom, removeViewFromDom };
+};

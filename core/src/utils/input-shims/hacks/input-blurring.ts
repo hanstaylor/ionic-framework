@@ -15,7 +15,7 @@ export const enableInputBlurring = () => {
     focused = true;
   };
 
-  const onTouchend = (ev: any) => {
+  const onTouchend = (ev: TouchEvent) => {
     // if app did scroll return early
     if (didScroll) {
       didScroll = false;
@@ -41,7 +41,7 @@ export const enableInputBlurring = () => {
     }
 
     focused = false;
-    // TODO: find a better way, why 50ms?
+    // TODO FW-2796: find a better way, why 50ms?
     setTimeout(() => {
       if (!focused) {
         active.blur();

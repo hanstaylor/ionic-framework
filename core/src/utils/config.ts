@@ -1,6 +1,6 @@
-import { AnimationBuilder, Mode, SpinnerTypes, TabButtonLayout } from '../interface';
+import type { AnimationBuilder, Mode, SpinnerTypes, TabButtonLayout } from '../interface';
 
-import { PlatformConfig } from './platform';
+import type { PlatformConfig } from './platform';
 
 export interface IonicConfig {
   /**
@@ -65,6 +65,11 @@ export interface IonicConfig {
   spinner?: SpinnerTypes;
 
   /**
+   * Overrides the default enableOnOffLabels in all `<ion-toggle>` components.
+   */
+  toggleOnOffLabels?: boolean;
+
+  /**
    * Overrides the default spinner for all `ion-loading` overlays, ie. the ones
    * created with `ion-loading-controller`.
    */
@@ -95,6 +100,11 @@ export interface IonicConfig {
    * Overrides the default "layout" of all `ion-bar-button` across the whole application.
    */
   tabButtonLayout?: TabButtonLayout;
+
+  /**
+   * Overrides the default `duration` for all `ion-toast` components.
+   */
+  toastDuration?: number;
 
   /**
    * Overrides the default "animation" of all `ion-nav` and `ion-router-outlet` across the whole application.
@@ -191,6 +201,7 @@ export interface IonicConfig {
   hideCaretOnScroll?: boolean;
 
   // INTERNAL configs
+  // TODO(FW-2832): types
   persistConfig?: boolean;
   _forceStatusbarPadding?: boolean;
   _testing?: boolean;
@@ -203,20 +214,21 @@ export interface IonicConfig {
 export const setupConfig = (config: IonicConfig) => {
   const win = window as any;
   const Ionic = win.Ionic;
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain
   if (Ionic && Ionic.config && Ionic.config.constructor.name !== 'Object') {
     return;
   }
   win.Ionic = win.Ionic || {};
   win.Ionic.config = {
     ...win.Ionic.config,
-    ...config
+    ...config,
   };
   return win.Ionic.config;
 };
 
 export const getMode = (): Mode => {
   const win = window as any;
-  const config = win && win.Ionic && win.Ionic.config;
+  const config = win?.Ionic?.config;
   if (config) {
     if (config.mode) {
       return config.mode;

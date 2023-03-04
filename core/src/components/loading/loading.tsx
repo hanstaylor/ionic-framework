@@ -1,16 +1,26 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Method, Prop, h } from '@stencil/core';
+import type { ComponentInterface, EventEmitter } from '@stencil/core';
+import { Component, Element, Event, Host, Method, Prop, h } from '@stencil/core';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
-import { AnimationBuilder, LoadingAttributes, OverlayEventDetail, OverlayInterface, SpinnerTypes } from '../../interface';
+import type {
+  AnimationBuilder,
+  LoadingAttributes,
+  OverlayEventDetail,
+  OverlayInterface,
+  SpinnerTypes,
+} from '../../interface';
 import { BACKDROP, dismiss, eventMethod, prepareOverlay, present } from '../../utils/overlays';
-import { IonicSafeString, sanitizeDOMString } from '../../utils/sanitization';
+import type { IonicSafeString } from '../../utils/sanitization';
+import { sanitizeDOMString } from '../../utils/sanitization';
 import { getClassMap } from '../../utils/theme';
 
 import { iosEnterAnimation } from './animations/ios.enter';
 import { iosLeaveAnimation } from './animations/ios.leave';
 import { mdEnterAnimation } from './animations/md.enter';
 import { mdLeaveAnimation } from './animations/md.leave';
+
+// TODO(FW-2832): types
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -19,12 +29,12 @@ import { mdLeaveAnimation } from './animations/md.leave';
   tag: 'ion-loading',
   styleUrls: {
     ios: 'loading.ios.scss',
-    md: 'loading.md.scss'
+    md: 'loading.md.scss',
   },
-  scoped: true
+  scoped: true,
 })
 export class Loading implements ComponentInterface, OverlayInterface {
-  private durationTimeout: any;
+  private durationTimeout?: ReturnType<typeof setTimeout>;
 
   presented = false;
   lastFocus?: HTMLElement;
@@ -124,10 +134,7 @@ export class Loading implements ComponentInterface, OverlayInterface {
   componentWillLoad() {
     if (this.spinner === undefined) {
       const mode = getIonMode(this);
-      this.spinner = config.get(
-        'loadingSpinner',
-        config.get('spinner', mode === 'ios' ? 'lines' : 'crescent')
-      );
+      this.spinner = config.get('loadingSpinner', config.get('spinner', mode === 'ios' ? 'lines' : 'crescent'));
     }
   }
 
@@ -136,13 +143,10 @@ export class Loading implements ComponentInterface, OverlayInterface {
    */
   @Method()
   async present(): Promise<void> {
-    await present(this, 'loadingEnter', iosEnterAnimation, mdEnterAnimation, undefined);
+    await present(this, 'loadingEnter', iosEnterAnimation, mdEnterAnimation);
 
     if (this.duration > 0) {
-      this.durationTimeout = setTimeout(
-        () => this.dismiss(),
-        this.duration + 10
-      );
+      this.durationTimeout = setTimeout(() => this.dismiss(), this.duration + 10);
     }
   }
 
@@ -181,38 +185,50 @@ export class Loading implements ComponentInterface, OverlayInterface {
 
   private onBackdropTap = () => {
     this.dismiss(undefined, BACKDROP);
-  }
+  };
 
   render() {
-    const { message, spinner, htmlAttributes } = this;
+    const { message, spinner, htmlAttributes, overlayIndex } = this;
     const mode = getIonMode(this);
+    const msgId = `loading-${overlayIndex}-msg`;
+    /**
+     * If the message is defined, use that as the label.
+     * Otherwise, don't set aria-labelledby.
+     */
+    const ariaLabelledBy = message !== undefined ? msgId : null;
+
     return (
       <Host
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={ariaLabelledBy}
         tabindex="-1"
-        {...htmlAttributes as any}
+        {...(htmlAttributes as any)}
         style={{
-          zIndex: `${40000 + this.overlayIndex}`
+          zIndex: `${40000 + this.overlayIndex}`,
         }}
         onIonBackdropTap={this.onBackdropTap}
         class={{
           ...getClassMap(this.cssClass),
           [mode]: true,
           'overlay-hidden': true,
-          'loading-translucent': this.translucent
+          'loading-translucent': this.translucent,
         }}
       >
         <ion-backdrop visible={this.showBackdrop} tappable={this.backdropDismiss} />
 
         <div tabindex="0"></div>
 
-        <div class="loading-wrapper ion-overlay-wrapper" role="dialog">
+        <div class="loading-wrapper ion-overlay-wrapper">
           {spinner && (
             <div class="loading-spinner">
               <ion-spinner name={spinner} aria-hidden="true" />
             </div>
           )}
 
-          {message && <div class="loading-content" innerHTML={sanitizeDOMString(message)}></div>}
+          {message !== undefined && (
+            <div class="loading-content" id={msgId} innerHTML={sanitizeDOMString(message)}></div>
+          )}
         </div>
 
         <div tabindex="0"></div>

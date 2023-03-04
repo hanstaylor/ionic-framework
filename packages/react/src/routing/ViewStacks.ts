@@ -1,6 +1,6 @@
-import { RouteInfo } from '../models/RouteInfo';
+import type { RouteInfo } from '../models/RouteInfo';
 
-import { ViewItem } from './ViewItem';
+import type { ViewItem } from './ViewItem';
 
 export abstract class ViewStacks {
   private viewStacks: { [key: string]: ViewItem[] } = {};
@@ -23,8 +23,7 @@ export abstract class ViewStacks {
 
   clear(outletId: string) {
     // Give some time for the leaving views to transition before removing
-    setTimeout(() => {
-      // console.log('Removing viewstack for outletID ' + outletId);
+    return setTimeout(() => {
       delete this.viewStacks[outletId];
     }, 500);
   }
@@ -65,11 +64,12 @@ export abstract class ViewStacks {
     page?: HTMLElement
   ): ViewItem;
   abstract findViewItemByPathname(pathname: string, outletId?: string): ViewItem | undefined;
-  abstract findViewItemByRouteInfo(routeInfo: RouteInfo, outletId?: string): ViewItem | undefined;
-  abstract findLeavingViewItemByRouteInfo(
+  abstract findViewItemByRouteInfo(
     routeInfo: RouteInfo,
-    outletId?: string
+    outletId?: string,
+    updateMatch?: boolean
   ): ViewItem | undefined;
+  abstract findLeavingViewItemByRouteInfo(routeInfo: RouteInfo, outletId?: string): ViewItem | undefined;
   abstract getChildrenToRender(
     outletId: string,
     ionRouterOutlet: React.ReactElement,

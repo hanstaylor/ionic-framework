@@ -1,13 +1,16 @@
-import {
+import type {
   Animation,
   AnimationCallbackOptions,
   AnimationDirection,
   AnimationFill,
   AnimationKeyFrames,
   AnimationLifecycle,
-  createAnimation,
 } from '@ionic/core/components';
+import { createAnimation } from '@ionic/core/components';
+import type { PropsWithChildren } from 'react';
 import React from 'react';
+
+// TODO(FW-2959): types
 
 interface PartialPropertyValue {
   property: string;
@@ -59,7 +62,7 @@ export interface CreateAnimationProps {
   progressEnd?: { playTo: 0 | 1 | undefined; step: number; dur?: number };
 }
 
-export class CreateAnimation extends React.PureComponent<CreateAnimationProps> {
+export class CreateAnimation extends React.PureComponent<PropsWithChildren<CreateAnimationProps>> {
   nodes: Map<number, HTMLElement> = new Map();
   animation: Animation;
 
@@ -124,6 +127,7 @@ const checkConfig = (animation: Animation, currentProps: any = {}, prevProps: an
   ];
   for (const key in currentProps) {
     if (
+      // eslint-disable-next-line no-prototype-builtins
       currentProps.hasOwnProperty(key) &&
       !reservedProps.includes(key) &&
       currentProps[key] !== prevProps[key]

@@ -1,35 +1,40 @@
-import { newE2EPage } from '@stencil/core/testing';
+import { expect } from '@playwright/test';
+import { test } from '@utils/test/playwright';
 
-test('framework-delegate: should present modal already at ion-app root', async () => {
-  const page = await newE2EPage({ url: '/src/utils/test/framework-delegate?ionic:_testing=true' });
+test.describe('framework-delegate', () => {
+  test.beforeEach(async ({ page, skip }) => {
+    skip.rtl();
+    skip.mode('ios');
 
-  const button = await page.find('#button-inline-root');
-  await button.click();
+    await page.goto('/src/utils/test/framework-delegate');
+  });
+  test('should present modal already at ion-app root', async ({ page }) => {
+    const ionModalDidPresent = await page.spyOnEvent('ionModalDidPresent');
 
-  const modal = await page.find('#inline-root');
-  expect(modal).not.toBe(null);
-  await modal.waitForVisible();
+    await page.click('#button-inline-root');
 
-});
+    const modal = page.locator('#inline-root');
+    await ionModalDidPresent.next();
+    await expect(modal).toBeVisible();
+  });
 
-test('framework-delegate: should present modal in content', async () => {
-  const page = await newE2EPage({ url: '/src/utils/test/framework-delegate?ionic:_testing=true' });
+  test('should present modal in content', async ({ page }) => {
+    const ionModalDidPresent = await page.spyOnEvent('ionModalDidPresent');
 
-  const button = await page.find('#button-inline-content');
-  await button.click();
+    await page.click('#button-inline-content');
 
-  const modal = await page.find('#inline-content');
-  expect(modal).not.toBe(null);
-  await modal.waitForVisible();
-});
+    const modal = page.locator('#inline-content');
+    await ionModalDidPresent.next();
+    await expect(modal).toBeVisible();
+  });
 
-test('framework-delegate: should present modal via controller', async () => {
-  const page = await newE2EPage({ url: '/src/utils/test/framework-delegate?ionic:_testing=true' });
+  test('should present modal via controller', async ({ page }) => {
+    const ionModalDidPresent = await page.spyOnEvent('ionModalDidPresent');
 
-  const button = await page.find('#button-controller');
-  await button.click();
+    await page.click('#button-controller');
 
-  const modal = await page.find('#controller');
-  expect(modal).not.toBe(null);
-  await modal.waitForVisible();
+    const modal = page.locator('#controller');
+    await ionModalDidPresent.next();
+    await expect(modal).toBeVisible();
+  });
 });

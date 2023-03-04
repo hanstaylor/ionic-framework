@@ -3,6 +3,8 @@ import { Inject, Injectable, NgZone } from '@angular/core';
 import { BackButtonEventDetail, KeyboardEventDetail, Platforms, getPlatforms, isPlatform } from '@nfdoom/ionic-core';
 import { Subject, Subscription } from 'rxjs';
 
+// TODO(FW-2827): types
+
 export interface BackButtonEmitter extends Subject<BackButtonEventDetail> {
   subscribeWithPriority(
     priority: number,
@@ -253,7 +255,7 @@ export class Platform {
 }
 
 const readQueryParam = (url: string, key: string) => {
-  key = key.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
+  key = key.replace(/[[\]\\]/g, '\\$&');
   const regex = new RegExp('[\\?&]' + key + '=([^&#]*)');
   const results = regex.exec(url);
   return results ? decodeURIComponent(results[1].replace(/\+/g, ' ')) : null;

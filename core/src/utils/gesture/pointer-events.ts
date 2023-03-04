@@ -2,6 +2,7 @@ import { addEventListener } from './listener';
 
 const MOUSE_WAIT = 2000;
 
+// TODO(FW-2832): types
 export const createPointerEvents = (
   el: Node,
   pointerDown: any,
@@ -9,10 +10,9 @@ export const createPointerEvents = (
   pointerUp: any,
   options: {
     passive?: boolean;
-    capture?: boolean
+    capture?: boolean;
   }
 ) => {
-
   let rmTouchStart: (() => void) | undefined;
   let rmTouchMove: (() => void) | undefined;
   let rmTouchEnd: (() => void) | undefined;
@@ -115,7 +115,6 @@ export const createPointerEvents = (
       }
       rmTouchStart = rmMouseStart = undefined;
       stop();
-
     } else {
       if (!rmTouchStart) {
         rmTouchStart = addEventListener(el, 'touchstart', handleTouchStart, options);
@@ -134,7 +133,7 @@ export const createPointerEvents = (
   return {
     enable,
     stop,
-    destroy
+    destroy,
   };
 };
 

@@ -1,7 +1,5 @@
-import { JSXBase } from '@stencil/core/internal';
-
-import { AnimationBuilder, Mode, TextFieldTypes } from '../../interface';
-import { IonicSafeString } from '../../utils/sanitization';
+import type { AnimationBuilder, Mode, TextFieldTypes } from '../../interface';
+import type { IonicSafeString } from '../../utils/sanitization';
 
 export interface AlertOptions {
   header?: string;
@@ -23,13 +21,16 @@ export interface AlertOptions {
   leaveAnimation?: AnimationBuilder;
 }
 
-export interface AlertAttributes extends JSXBase.HTMLAttributes<HTMLElement> {}
+/**
+ * @deprecated - Use { [key: string]: any } directly instead.
+ */
+export type AlertAttributes = { [key: string]: any };
 
 export interface AlertInput {
   type?: TextFieldTypes | 'checkbox' | 'radio' | 'textarea';
   name?: string;
   placeholder?: string;
-  value?: any;
+  value?: any; // TODO(FW-2832): type
   label?: string;
   checked?: boolean;
   disabled?: boolean;
@@ -42,13 +43,23 @@ export interface AlertInput {
   tabindex?: number;
 }
 
-export interface AlertTextareaAttributes extends JSXBase.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-export interface AlertInputAttributes extends JSXBase.InputHTMLAttributes<HTMLInputElement> {}
+/**
+ * @deprecated - Use { [key: string]: any } directly instead.
+ */
+export type AlertTextareaAttributes = { [key: string]: any };
+
+/**
+ * @deprecated - Use { [key: string]: any } directly instead.
+ */
+export type AlertInputAttributes = { [key: string]: any };
+
+type AlertButtonOverlayHandler = boolean | void | { [key: string]: any };
 
 export interface AlertButton {
   text: string;
   role?: 'cancel' | 'destructive' | string;
   cssClass?: string | string[];
   id?: string;
-  handler?: (value: any) => boolean | void | {[key: string]: any};
+  // TODO(FW-2832): type
+  handler?: (value: any) => AlertButtonOverlayHandler | Promise<AlertButtonOverlayHandler>;
 }

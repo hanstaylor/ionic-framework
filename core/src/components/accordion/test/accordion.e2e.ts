@@ -1,55 +1,56 @@
-import { newE2EPage } from '@stencil/core/testing';
+import { expect } from '@playwright/test';
+import { test } from '@utils/test/playwright';
 
-test('should properly set readonly on child accordions', async () => {
-  const page = await newE2EPage({
-    html: `
+test.describe('accordion: states', () => {
+  test.beforeEach(({ skip }) => {
+    skip.rtl();
+    skip.mode('ios');
+  });
+  test('should properly set readonly on child accordions', async ({ page }) => {
+    await page.setContent(`
       <ion-accordion-group animated="false">
         <ion-accordion>
           <ion-item slot="header">Label</ion-item>
           <div slot="content">Content</div>
         </ion-accordion>
       </ion-accordion-group>
-    `
+    `);
+
+    const accordionGroup = page.locator('ion-accordion-group');
+    const accordion = page.locator('ion-accordion');
+
+    await expect(accordion).toHaveJSProperty('readonly', false);
+
+    await accordionGroup.evaluate((el: HTMLIonAccordionGroupElement) => {
+      el.readonly = true;
+    });
+
+    await page.waitForChanges();
+
+    await expect(accordion).toHaveJSProperty('readonly', true);
   });
 
-  const accordion = await page.find('ion-accordion');
-  const value = await accordion.getProperty('readonly');
-
-  expect(value).toBe(false);
-
-  await page.$eval('ion-accordion-group', (el: HTMLIonAccordionGroupElement) => {
-    el.readonly = true;
-  });
-
-  await page.waitForChanges();
-
-  const valueAgain = await accordion.getProperty('readonly');
-  expect(valueAgain).toBe(true);
-});
-
-test('should properly set disabled on child accordions', async () => {
-  const page = await newE2EPage({
-    html: `
+  test('should properly set disabled on child accordions', async ({ page }) => {
+    await page.setContent(`
       <ion-accordion-group animated="false">
         <ion-accordion>
           <ion-item slot="header">Label</ion-item>
           <div slot="content">Content</div>
         </ion-accordion>
       </ion-accordion-group>
-    `
+    `);
+
+    const accordionGroup = page.locator('ion-accordion-group');
+    const accordion = page.locator('ion-accordion');
+
+    await expect(accordion).toHaveJSProperty('disabled', false);
+
+    await accordionGroup.evaluate((el: HTMLIonAccordionGroupElement) => {
+      el.disabled = true;
+    });
+
+    await page.waitForChanges();
+
+    await expect(accordion).toHaveJSProperty('disabled', true);
   });
-
-  const accordion = await page.find('ion-accordion');
-  const value = await accordion.getProperty('disabled');
-
-  expect(value).toBe(false);
-
-  await page.$eval('ion-accordion-group', (el: HTMLIonAccordionGroupElement) => {
-    el.disabled = true;
-  });
-
-  await page.waitForChanges();
-
-  const valueAgain = await accordion.getProperty('disabled');
-  expect(valueAgain).toBe(true);
 });

@@ -1,5 +1,7 @@
 import { defineComponent, h, ref, VNode, onMounted } from 'vue';
 
+// TODO(FW-2969): types
+
 export interface OverlayProps {
   isOpen?: boolean;
 }
@@ -139,6 +141,7 @@ export const defineOverlayContainer = <Props extends object>(name: string, defin
       const elementRef = ref();
 
       onMounted(() => {
+        elementRef.value.addEventListener('ion-mount', () => isOpen.value = true);
         elementRef.value.addEventListener('will-present', () => isOpen.value = true);
         elementRef.value.addEventListener('did-dismiss', () => isOpen.value = false);
       });
@@ -162,7 +165,7 @@ export const defineOverlayContainer = <Props extends object>(name: string, defin
         return h(
           name,
           { ...restOfProps, ref: elementRef },
-          (isOpen.value) ? slots : undefined
+          (isOpen.value || restOfProps.keepContentsMounted) ? slots : undefined
         )
       }
     });

@@ -1,9 +1,12 @@
-import { Component, ComponentInterface, Element, Event, EventEmitter, Host, Listen, Prop, h } from '@stencil/core';
+import type { ComponentInterface, EventEmitter } from '@stencil/core';
+import { Component, Element, Event, Host, Listen, Prop, h } from '@stencil/core';
 
 import { config } from '../../global/config';
 import { getIonMode } from '../../global/ionic-global';
-import { TabBarChangedEventDetail, TabButtonClickEventDetail, TabButtonLayout } from '../../interface';
-import { AnchorInterface } from '../../utils/element-interface';
+import type { TabBarChangedEventDetail, TabButtonClickEventDetail, TabButtonLayout } from '../../interface';
+import type { AnchorInterface } from '../../utils/element-interface';
+import type { Attributes } from '../../utils/helpers';
+import { inheritAttributes } from '../../utils/helpers';
 
 /**
  * @virtualProp {"ios" | "md"} mode - The mode determines which platform styles to use.
@@ -14,11 +17,12 @@ import { AnchorInterface } from '../../utils/element-interface';
   tag: 'ion-tab-button',
   styleUrls: {
     ios: 'tab-button.ios.scss',
-    md: 'tab-button.md.scss'
+    md: 'tab-button.md.scss',
   },
-  shadow: true
+  shadow: true,
 })
 export class TabButton implements ComponentInterface, AnchorInterface {
+  private inheritedAttributes: Attributes = {};
 
   @Element() el!: HTMLElement;
 
@@ -82,12 +86,16 @@ export class TabButton implements ComponentInterface, AnchorInterface {
     const dispatchedFrom = ev.target as HTMLElement;
     const parent = this.el.parentElement as EventTarget;
 
-    if ((ev.composedPath && ev.composedPath().includes(parent)) || (dispatchedFrom && dispatchedFrom.contains(this.el))) {
+    if (ev.composedPath().includes(parent) || dispatchedFrom?.contains(this.el)) {
       this.selected = this.tab === ev.detail.tab;
     }
   }
 
   componentWillLoad() {
+    this.inheritedAttributes = {
+      ...inheritAttributes(this.el, ['aria-label']),
+    };
+
     if (this.layout === undefined) {
       this.layout = config.get('tabButtonLayout', 'icon-top');
     }
@@ -99,7 +107,7 @@ export class TabButton implements ComponentInterface, AnchorInterface {
         this.ionTabButtonClick.emit({
           tab: this.tab,
           href: this.href,
-          selected: this.selected
+          selected: this.selected,
         });
       }
       ev.preventDefault();
@@ -114,45 +122,30 @@ export class TabButton implements ComponentInterface, AnchorInterface {
     return !!this.el.querySelector('ion-icon');
   }
 
-  private get tabIndex() {
-    if (this.disabled) { return -1; }
-
-    const hasTabIndex = this.el.hasAttribute('tabindex');
-
-    if (hasTabIndex) {
-      return this.el.getAttribute('tabindex');
-    }
-
-    return 0;
-  }
-
   private onKeyUp = (ev: KeyboardEvent) => {
     if (ev.key === 'Enter' || ev.key === ' ') {
       this.selectTab(ev);
     }
-  }
+  };
 
   private onClick = (ev: Event) => {
     this.selectTab(ev);
-  }
+  };
 
   render() {
-    const { disabled, hasIcon, hasLabel, tabIndex, href, rel, target, layout, selected, tab } = this;
+    const { disabled, hasIcon, hasLabel, href, rel, target, layout, selected, tab, inheritedAttributes } = this;
     const mode = getIonMode(this);
     const attrs = {
       download: this.download,
       href,
       rel,
-      target
+      target,
     };
 
     return (
       <Host
         onClick={this.onClick}
         onKeyup={this.onKeyUp}
-        role="tab"
-        tabindex={tabIndex}
-        aria-selected={selected ? 'true' : null}
         id={tab !== undefined ? `tab-button-${tab}` : null}
         class={{
           [mode]: true,
@@ -165,10 +158,19 @@ export class TabButton implements ComponentInterface, AnchorInterface {
           [`tab-layout-${layout}`]: true,
           'ion-activatable': true,
           'ion-selectable': true,
-          'ion-focusable': true
+          'ion-focusable': true,
         }}
       >
-        <a {...attrs} tabIndex={-1} class="button-native" part="native">
+        <a
+          {...attrs}
+          class="button-native"
+          part="native"
+          role="tab"
+          aria-selected={selected ? 'true' : null}
+          aria-disabled={disabled ? 'true' : null}
+          tabindex={disabled ? '-1' : undefined}
+          {...inheritedAttributes}
+        >
           <span class="button-inner">
             <slot></slot>
           </span>

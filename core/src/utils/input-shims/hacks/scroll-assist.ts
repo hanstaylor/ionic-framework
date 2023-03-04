@@ -1,3 +1,4 @@
+import { getScrollElement, scrollByPoint } from '../../content';
 import { pointerCoord, raf } from '../../helpers';
 
 import { isFocused, relocateInput } from './common';
@@ -6,11 +7,12 @@ import { getScrollData } from './scroll-data';
 export const enableScrollAssist = (
   componentEl: HTMLElement,
   inputEl: HTMLInputElement | HTMLTextAreaElement,
-  contentEl: HTMLIonContentElement | null,
+  contentEl: HTMLElement | null,
   footerEl: HTMLIonFooterElement | null,
-  keyboardHeight: number
+  keyboardHeight: number,
+  disableClonedInput = false
 ) => {
-  let coord: any;
+  let coord: { x: number; y: number } | undefined;
   const touchStart = (ev: Event) => {
     coord = pointerCoord(ev);
   };
@@ -26,13 +28,11 @@ export const enableScrollAssist = (
     // focus this input if the pointer hasn't moved XX pixels
     // and the input doesn't already have focus
     if (!hasPointerMoved(6, coord, endCoord) && !isFocused(inputEl)) {
-      ev.stopPropagation();
-
       // begin the input focus process
-      jsSetFocus(componentEl, inputEl, contentEl, footerEl, keyboardHeight);
+      jsSetFocus(componentEl, inputEl, contentEl, footerEl, keyboardHeight, disableClonedInput);
     }
   };
-  componentEl.addEventListener('touchstart', touchStart, true);
+  componentEl.addEventListener('touchstart', touchStart, { capture: true, passive: true });
   componentEl.addEventListener('touchend', touchEnd, true);
 
   return () => {
@@ -44,11 +44,14 @@ export const enableScrollAssist = (
 const jsSetFocus = async (
   componentEl: HTMLElement,
   inputEl: HTMLInputElement | HTMLTextAreaElement,
-  contentEl: HTMLIonContentElement | null,
+  contentEl: HTMLElement | null,
   footerEl: HTMLIonFooterElement | null,
-  keyboardHeight: number
+  keyboardHeight: number,
+  disableClonedInput = false
 ) => {
-  if (!contentEl && !footerEl) { return; }
+  if (!contentEl && !footerEl) {
+    return;
+  }
   const scrollData = getScrollData(componentEl, (contentEl || footerEl)!, keyboardHeight);
 
   if (contentEl && Math.abs(scrollData.scrollAmount) < 4) {
@@ -61,7 +64,7 @@ const jsSetFocus = async (
   // temporarily move the focus to the focus holder so the browser
   // doesn't freak out while it's trying to get the input in place
   // at this point the native text input still does not have focus
-  relocateInput(componentEl, inputEl, true, scrollData.inputSafeY);
+  relocateInput(componentEl, inputEl, true, scrollData.inputSafeY, disableClonedInput);
   inputEl.focus();
 
   /**
@@ -71,9 +74,8 @@ const jsSetFocus = async (
    */
   raf(() => componentEl.click());
 
-  /* tslint:disable-next-line */
   if (typeof window !== 'undefined') {
-    let scrollContentTimeout: any;
+    let scrollContentTimeout: ReturnType<typeof setTimeout>;
     const scrollContent = async () => {
       // clean up listeners and timeouts
       if (scrollContentTimeout !== undefined) {
@@ -85,7 +87,7 @@ const jsSetFocus = async (
 
       // scroll the input into place
       if (contentEl) {
-        await contentEl.scrollByPoint(0, scrollData.scrollAmount, scrollData.scrollDuration);
+        await scrollByPoint(contentEl, 0, scrollData.scrollAmount, scrollData.scrollDuration);
       }
 
       // the scroll view is in the correct position now
@@ -102,7 +104,7 @@ const jsSetFocus = async (
     };
 
     if (contentEl) {
-      const scrollEl = await contentEl.getScrollElement();
+      const scrollEl = await getScrollElement(contentEl);
 
       /**
        * scrollData will only consider the amount we need
@@ -117,15 +119,13 @@ const jsSetFocus = async (
        * bandwidth to become available.
        */
       const totalScrollAmount = scrollEl.scrollHeight - scrollEl.clientHeight;
-      if (scrollData.scrollAmount > (totalScrollAmount - scrollEl.scrollTop)) {
-
+      if (scrollData.scrollAmount > totalScrollAmount - scrollEl.scrollTop) {
         /**
          * On iOS devices, the system will show a "Passwords" bar above the keyboard
          * after the initial keyboard is shown. This prevents the webview from resizing
          * until the "Passwords" bar is shown, so we need to wait for that to happen first.
          */
         if (inputEl.type === 'password') {
-
           // Add 50px to account for the "Passwords" bar
           scrollData.scrollAmount += 50;
           window.addEventListener('ionKeyboardDidShow', doubleKeyboardEventListener);
@@ -148,12 +148,16 @@ const jsSetFocus = async (
   }
 };
 
-const hasPointerMoved = (threshold: number, startCoord: PointerCoordinates | undefined, endCoord: PointerCoordinates | undefined) => {
+const hasPointerMoved = (
+  threshold: number,
+  startCoord: PointerCoordinates | undefined,
+  endCoord: PointerCoordinates | undefined
+) => {
   if (startCoord && endCoord) {
-    const deltaX = (startCoord.x - endCoord.x);
-    const deltaY = (startCoord.y - endCoord.y);
+    const deltaX = startCoord.x - endCoord.x;
+    const deltaY = startCoord.y - endCoord.y;
     const distance = deltaX * deltaX + deltaY * deltaY;
-    return distance > (threshold * threshold);
+    return distance > threshold * threshold;
   }
   return false;
 };

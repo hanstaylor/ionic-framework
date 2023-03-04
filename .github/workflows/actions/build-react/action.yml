@@ -3,24 +3,16 @@ description: 'Build Ionic React'
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@v3
       with:
-        node-version: 15.x
-
-    - name: Cache Core Node Modules
-      uses: actions/cache@v2
-      env:
-        cache-name: core-node-modules
-      with:
-        path: ./core/node_modules
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('./core/package-lock.json') }}-v2
+        node-version: 16.x
     - uses: ./.github/workflows/actions/download-archive
       with:
         name: ionic-core
         path: ./core
         filename: CoreBuild.zip
     - name: Install React Dependencies
-      run: npm install --legacy-peer-deps
+      run: npm ci
       shell: bash
       working-directory: ./packages/react
     - name: Sync
@@ -37,6 +29,10 @@ runs:
       working-directory: ./packages/react
     - name: Test Spec
       run: npm run test.spec
+      shell: bash
+      working-directory: ./packages/react
+    - name: Check Diff
+      run: git diff --exit-code
       shell: bash
       working-directory: ./packages/react
     - uses: ./.github/workflows/actions/upload-archive

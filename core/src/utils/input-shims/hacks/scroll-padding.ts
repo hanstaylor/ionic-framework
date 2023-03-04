@@ -1,8 +1,11 @@
+import { findClosestIonContent } from '../../content';
+
 const PADDING_TIMER_KEY = '$ionPaddingTimer';
 
 export const enableScrollPadding = (keyboardHeight: number) => {
   const doc = document;
 
+  // TODO(FW-2832): types
   const onFocusin = (ev: any) => {
     setScrollPadding(ev.target, keyboardHeight);
   };
@@ -26,15 +29,11 @@ const setScrollPadding = (input: HTMLElement, keyboardHeight: number) => {
   if (input.parentElement && input.parentElement.tagName === 'ION-INPUT') {
     return;
   }
-  if (
-    input.parentElement &&
-    input.parentElement.parentElement &&
-    input.parentElement.parentElement.tagName === 'ION-SEARCHBAR'
-  ) {
+  if (input.parentElement?.parentElement?.tagName === 'ION-SEARCHBAR') {
     return;
   }
 
-  const el = input.closest('ion-content');
+  const el = findClosestIonContent(input);
   if (el === null) {
     return;
   }
