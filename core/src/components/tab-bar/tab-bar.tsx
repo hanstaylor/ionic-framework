@@ -65,20 +65,11 @@ export class TabBar implements ComponentInterface {
   }
 
   connectedCallback() {
-    if (typeof (window as any) !== 'undefined') {
-      this.keyboardWillShowHandler = () => {
-        if (this.el.getAttribute('slot') !== 'top' && this.hideOnKeyboard) {
-          this.keyboardVisible = true;
-        }
-      }
+    if(!this.hideOnKeyboard) return
 
-      this.keyboardWillHideHandler = () => {
-        setTimeout(() => this.keyboardVisible = false, 50);
-      }
-
-      window.addEventListener('keyboardWillShow', this.keyboardWillShowHandler!);
-      window.addEventListener('keyboardWillHide', this.keyboardWillHideHandler!);
-    }
+    this.keyboardCtrl = createKeyboardController((keyboardOpen) => {
+      this.keyboardVisible = keyboardOpen; // trigger re-render by updating state
+    });
   }
 
   disconnectedCallback() {

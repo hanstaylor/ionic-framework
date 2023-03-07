@@ -2,7 +2,7 @@
 
 set -e
 
-# Pack @ionic/core
+# Pack @nfdoom/ionic-core
 npm pack ../core
 
 # Install Dependencies
