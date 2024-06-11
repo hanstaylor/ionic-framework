@@ -3,6 +3,78 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.7.4](https://github.com/ionic-team/ionic-docs/compare/v6.7.3...v6.7.4) (2023-04-19)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.7.3](https://github.com/ionic-team/ionic-docs/compare/v6.7.2...v6.7.3) (2023-04-12)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.7.2](https://github.com/ionic-team/ionic-docs/compare/v6.7.1...v6.7.2) (2023-04-05)
+
+
+
+## [6.0.16](https://github.com/ionic-team/ionic-docs/compare/v6.0.15...v6.0.16) (2022-04-08)
+
+
+
+## [6.0.15](https://github.com/ionic-team/ionic-docs/compare/v6.0.14...v6.0.15) (2022-04-06)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.7.1](https://github.com/ionic-team/ionic-docs/compare/v6.7.0...v6.7.1) (2023-03-29)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+# [6.7.0](https://github.com/ionic-team/ionic-docs/compare/v6.6.3...v6.7.0) (2023-03-23)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.6.3](https://github.com/ionic-team/ionic-docs/compare/v6.6.2...v6.6.3) (2023-03-22)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.6.2](https://github.com/ionic-team/ionic-docs/compare/v6.6.1...v6.6.2) (2023-03-15)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
+## [6.6.1](https://github.com/ionic-team/ionic-docs/compare/v6.6.0...v6.6.1) (2023-03-08)
+
+**Note:** Version bump only for package @ionic/docs
+
+
+
+
+
 # [6.6.0](https://github.com/ionic-team/ionic-docs/compare/v6.5.7...v6.6.0) (2023-03-01)
 
 **Note:** Version bump only for package @ionic/docs
@@ -395,7 +467,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
-# [6.1.0](https://github.com/ionic-team/ionic-docs/compare/v6.0.14...v6.1.0) (2022-04-13)
+# [6.1.0](https://github.com/ionic-team/ionic-docs/compare/v6.0.16...v6.1.0) (2022-04-13)
 
 **Note:** Version bump only for package @ionic/docs
 

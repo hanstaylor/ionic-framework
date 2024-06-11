@@ -3,6 +3,114 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [6.7.4](https://github.com/ionic-team/ionic/compare/v6.7.3...v6.7.4) (2023-04-19)
+
+
+### Bug Fixes
+
+* **segment-button:** update checked state on render ([#27183](https://github.com/ionic-team/ionic/issues/27183)) ([ae9689b](https://github.com/ionic-team/ionic/commit/ae9689bf3e185749dd2e0b27864b1c99b129820e))
+
+
+
+
+
+## [6.7.3](https://github.com/ionic-team/ionic/compare/v6.7.2...v6.7.3) (2023-04-12)
+
+
+### Bug Fixes
+
+* **menu:** refs are not destroyed on unmount ([#27158](https://github.com/ionic-team/ionic/issues/27158)) ([ab6cdff](https://github.com/ionic-team/ionic/commit/ab6cdff97e710da47b113642f9bcb735a515375e))
+
+
+
+
+
+## [6.7.2](https://github.com/ionic-team/ionic/compare/v6.7.1...v6.7.2) (2023-04-05)
+
+
+### Bug Fixes
+
+* **item-divider:** set padding-end for md ([#27070](https://github.com/ionic-team/ionic/issues/27070)) ([214e835](https://github.com/ionic-team/ionic/commit/214e83529f7115852c27a37869c8231330fdb8ac))
+* **picker-column-internal:** hide empty picker items from screenreaders ([#27114](https://github.com/ionic-team/ionic/issues/27114)) ([3ecfb9c](https://github.com/ionic-team/ionic/commit/3ecfb9ce43d9d5cf93f1f2be26a0922a16894362)), closes [#26809](https://github.com/ionic-team/ionic/issues/26809)
+
+
+
+## [6.0.16](https://github.com/ionic-team/ionic/compare/v6.0.15...v6.0.16) (2022-04-08)
+
+
+
+## [6.0.15](https://github.com/ionic-team/ionic/compare/v6.0.14...v6.0.15) (2022-04-06)
+
+
+
+
+
+## [6.7.1](https://github.com/ionic-team/ionic/compare/v6.7.0...v6.7.1) (2023-03-29)
+
+
+### Bug Fixes
+
+* **item-sliding:** open method works with items added async ([#27035](https://github.com/ionic-team/ionic/issues/27035)) ([521063b](https://github.com/ionic-team/ionic/commit/521063bf241dc2c55bcd02a92ed8a418cfec6b1e)), closes [#26991](https://github.com/ionic-team/ionic/issues/26991)
+* **item:** use thumbnail's size when present ([#27014](https://github.com/ionic-team/ionic/issues/27014)) ([6cecdf4](https://github.com/ionic-team/ionic/commit/6cecdf41451a5c7aa908494dfad9fab1496a0c6c)), closes [#22935](https://github.com/ionic-team/ionic/issues/22935)
+* **radio-group:** radios participate in form submission ([#27018](https://github.com/ionic-team/ionic/issues/27018)) ([3b99c31](https://github.com/ionic-team/ionic/commit/3b99c31bab41bf7fcec340ac7159d3e8fce126c1)), closes [#27016](https://github.com/ionic-team/ionic/issues/27016)
+* **select:** inherit white-space in select-text to allow text wrapping ([#26973](https://github.com/ionic-team/ionic/issues/26973)) ([19c1e25](https://github.com/ionic-team/ionic/commit/19c1e25399ca18c8e6a8dd39c0131979c0bb01e9)), closes [#19949](https://github.com/ionic-team/ionic/issues/19949)
+
+
+
+
+
+# [6.7.0](https://github.com/ionic-team/ionic/compare/v6.6.3...v6.7.0) (2023-03-23)
+
+
+### Features
+
+* **config:** add option to disable custom html functionality ([#26956](https://github.com/ionic-team/ionic/issues/26956)) ([3b0af7c](https://github.com/ionic-team/ionic/commit/3b0af7c55d4fa039be33d6605414761494d5af8f))
+
+
+
+
+
+## [6.6.3](https://github.com/ionic-team/ionic/compare/v6.6.2...v6.6.3) (2023-03-22)
+
+
+### Bug Fixes
+
+* **menu:** main content is not scrollable while swiping ([#26976](https://github.com/ionic-team/ionic/issues/26976)) ([88bd8a4](https://github.com/ionic-team/ionic/commit/88bd8a47c5e844d1d3a2b3b13621826faf776afb)), closes [#21193](https://github.com/ionic-team/ionic/issues/21193)
+
+
+
+
+
+## [6.6.2](https://github.com/ionic-team/ionic/compare/v6.6.1...v6.6.2) (2023-03-15)
+
+
+### Bug Fixes
+
+* **accordion:** include margins during expand animation ([#26390](https://github.com/ionic-team/ionic/issues/26390)) ([f809918](https://github.com/ionic-team/ionic/commit/f80991813ae8873d8ef6038b0aeb763d727f402e)), closes [#26381](https://github.com/ionic-team/ionic/issues/26381)
+* **IonicSlides:** remove unnecessary autoplay option ([#26935](https://github.com/ionic-team/ionic/issues/26935)) ([b8f8937](https://github.com/ionic-team/ionic/commit/b8f893731471052df198824b7ece47606ffcc500))
+* **radio:** checked state is updated when value changes ([#26936](https://github.com/ionic-team/ionic/issues/26936)) ([27a5356](https://github.com/ionic-team/ionic/commit/27a5356fa2b72073d565e9d6f527107869faa3ee))
+* **react/vue:** properly switch ionicon based on the mode when ios/md is set ([#26924](https://github.com/ionic-team/ionic/issues/26924)) ([1eb9a08](https://github.com/ionic-team/ionic/commit/1eb9a085b2d69dfcfc71ff49b25d33347dd54aae)), closes [#26207](https://github.com/ionic-team/ionic/issues/26207)
+* **textarea:** inherit tabindex to inner textarea ([#26945](https://github.com/ionic-team/ionic/issues/26945)) ([2c68d01](https://github.com/ionic-team/ionic/commit/2c68d01b898a2f879445b8b64014189afe1255d7)), closes [#26944](https://github.com/ionic-team/ionic/issues/26944)
+
+
+
+
+
+## [6.6.1](https://github.com/ionic-team/ionic/compare/v6.6.0...v6.6.1) (2023-03-08)
+
+
+### Bug Fixes
+
+* **button:** show correct activated state for ios ([#26900](https://github.com/ionic-team/ionic/issues/26900)) ([67815cc](https://github.com/ionic-team/ionic/commit/67815ccbf4650ecbbc6c79d5063ab5ba50cb358c)), closes [#22468](https://github.com/ionic-team/ionic/issues/22468)
+* **datetime-button:** time-only values are parsed ([#26852](https://github.com/ionic-team/ionic/issues/26852)) ([f54fc18](https://github.com/ionic-team/ionic/commit/f54fc188843af52e723e06402e01ef92717e541f)), closes [#26851](https://github.com/ionic-team/ionic/issues/26851)
+* **datetime:** resolve import error in stencil apps ([#26909](https://github.com/ionic-team/ionic/issues/26909)) ([48c45af](https://github.com/ionic-team/ionic/commit/48c45afdb6ca7dad0a1f2a6d3ece6df8ba23eb69)), closes [#26908](https://github.com/ionic-team/ionic/issues/26908)
+* **menu, split-pane:** ssr does not fail on null customElements check ([#26854](https://github.com/ionic-team/ionic/issues/26854)) ([451d220](https://github.com/ionic-team/ionic/commit/451d2204e79a4a10c1eb829ab0bd75c137b02475)), closes [#24714](https://github.com/ionic-team/ionic/issues/24714)
+* **modal:** avoid chrome memory leak bug ([#26911](https://github.com/ionic-team/ionic/issues/26911)) ([a3f8e28](https://github.com/ionic-team/ionic/commit/a3f8e281721f6ef8c9479f5870198b7a009daabd))
+
+
+
+
+
 # [6.6.0](https://github.com/ionic-team/ionic/compare/v6.5.7...v6.6.0) (2023-03-01)
 
 
@@ -729,7 +837,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 
 
-# [6.1.0](https://github.com/ionic-team/ionic/compare/v6.0.14...v6.1.0) (2022-04-13)
+# [6.1.0](https://github.com/ionic-team/ionic/compare/v6.0.16...v6.1.0) (2022-04-13)
 
 
 ### Bug Fixes

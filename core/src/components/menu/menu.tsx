@@ -173,7 +173,7 @@ export class Menu implements ComponentInterface, MenuI {
   async connectedCallback() {
     // TODO: connectedCallback is fired in CE build
     // before WC is defined. This needs to be fixed in Stencil.
-    if (typeof (customElements as any) !== 'undefined') {
+    if (typeof (customElements as any) !== 'undefined' && (customElements as any) != null) {
       await customElements.whenDefined('ion-menu');
     }
 
@@ -234,7 +234,16 @@ export class Menu implements ComponentInterface, MenuI {
     this.updateState();
   }
 
-  disconnectedCallback() {
+  async disconnectedCallback() {
+    /**
+     * The menu should be closed when it is
+     * unmounted from the DOM.
+     * This is an async call, so we need to wait for
+     * this to finish otherwise contentEl
+     * will not have MENU_CONTENT_OPEN removed.
+     */
+    await this.close(false);
+
     this.blocker.destroy();
     menuController._unregister(this);
     if (this.animation) {
@@ -246,7 +255,7 @@ export class Menu implements ComponentInterface, MenuI {
     }
 
     this.animation = undefined;
-    this.contentEl = this.backdropEl = this.menuInnerEl = undefined;
+    this.contentEl = undefined;
   }
 
   @Listen('ionSplitPaneVisible', { target: 'body' })
@@ -578,6 +587,25 @@ export class Menu implements ComponentInterface, MenuI {
     if (this.backdropEl) {
       this.backdropEl.classList.add(SHOW_BACKDROP);
     }
+
+    // add css class and hide content behind menu from screen readers
+    if (this.contentEl) {
+      this.contentEl.classList.add(MENU_CONTENT_OPEN);
+
+      /**
+       * When the menu is open and overlaying the main
+       * content, the main content should not be announced
+       * by the screenreader as the menu is the main
+       * focus. This is useful with screenreaders that have
+       * "read from top" gestures that read the entire
+       * page from top to bottom when activated.
+       * This should be done before the animation starts
+       * so that users cannot accidentally scroll
+       * the content while dragging a menu open.
+       */
+      this.contentEl.setAttribute('aria-hidden', 'true');
+    }
+
     this.blocker.block();
     this.isAnimating = true;
     if (shouldOpen) {
@@ -601,21 +629,6 @@ export class Menu implements ComponentInterface, MenuI {
     }
 
     if (isOpen) {
-      // add css class and hide content behind menu from screen readers
-      if (this.contentEl) {
-        this.contentEl.classList.add(MENU_CONTENT_OPEN);
-
-        /**
-         * When the menu is open and overlaying the main
-         * content, the main content should not be announced
-         * by the screenreader as the menu is the main
-         * focus. This is useful with screenreaders that have
-         * "read from top" gestures that read the entire
-         * page from top to bottom when activated.
-         */
-        this.contentEl.setAttribute('aria-hidden', 'true');
-      }
-
       // emit open event
       this.ionDidOpen.emit();
 
